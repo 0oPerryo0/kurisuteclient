@@ -12,7 +12,12 @@ const { unityPointerProbeScript } = require('./unity-pointer-probe');
 const { inspectAsset, decodedBytes } = require('./asset-analysis');
 const { extractMetadata, parseMetadata } = require('./il2cpp-metadata');
 
+// Unity's WASM heap is most of the RAM and cannot be shrunk. These only remove
+// extra Chromium processes and unused features.
+app.commandLine.appendSwitch('renderer-process-limit', '2');
+app.commandLine.appendSwitch('disable-features', 'SpareRendererForSitePerProcess,IsolateOrigins,site-per-process');
 const HOME = 'https://games.dmm.co.jp/detail/charsapple_x_879635';
+const APP_ICON = path.join(__dirname, 'icon.ico');
 const TOOLBAR_HEIGHT = 0;
 const GAME_WIDTH = 1136;
 const GAME_HEIGHT = 640;
@@ -337,8 +342,8 @@ function openBridgeWindow() {
   if (bridgeWindow && !bridgeWindow.isDestroyed()) { bridgeWindow.focus(); return; }
   bridgeWindow = new BrowserWindow({
     parent: window, modal: true, width: 520, height: 560, resizable: false,
-    title: 'Unity speed bridge', backgroundColor: '#181b25',
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: true },
+    title: 'Unity speed bridge', backgroundColor: '#181b25', icon: APP_ICON,
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: true, spellcheck: false },
   });
   bridgeWindow.loadFile(path.join(__dirname, 'bridge.html'));
   bridgeWindow.on('closed', () => { bridgeWindow = null; });
@@ -401,7 +406,7 @@ function updateAmbientTimer() {
   ambientTimer = undefined;
   if (settings.gameOnly && game && !game.webContents.isDestroyed() &&
       game.webContents.getURL().startsWith('https://play.games.dmm.co.jp/')) {
-    ambientTimer = setInterval(refreshAmbient, 4000);
+    ambientTimer = setInterval(refreshAmbient, 15000);
     refreshAmbient();
   }
 }
@@ -500,7 +505,8 @@ function secureWebContents(contents) {
   contents.setWindowOpenHandler(({ url }) => ({
     action: url.startsWith('https://') ? 'allow' : 'deny',
     overrideBrowserWindowOptions: {
-      webPreferences: { partition: 'persist:criste', nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true },
+      icon: APP_ICON,
+      webPreferences: { partition: 'persist:criste', nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, spellcheck: false, backgroundThrottling: true },
       width: 900, height: 720,
     },
   }));
@@ -515,12 +521,13 @@ function createWindow() {
     ...settings.bounds,
     minWidth: 760, minHeight: 520,
     title: 'クリステの遺宝 — Unofficial Desktop Prototype',
+    icon: APP_ICON,
     backgroundColor: '#181b25',
     autoHideMenuBar: true,
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: true },
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: true, spellcheck: false },
   });
   game = new WebContentsView({
-    webPreferences: { partition: 'persist:criste', nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true },
+    webPreferences: { partition: 'persist:criste', nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, spellcheck: false, backgroundThrottling: true },
   });
   window.contentView.addChildView(game);
   resizeGame();
@@ -566,7 +573,8 @@ function createWindow() {
 app.whenReady().then(() => {
   settings = readSettings();
   // Keep the DMM login session in this app, not in the user's regular browser.
-  session.fromPartition('persist:criste');
+  const gameSession = session.fromPartition('persist:criste');
+  gameSession.setSpellCheckerEnabled(false);
   ipcMain.handle('client:command', async (event, command, value) => {
     if (event.sender !== window.webContents && event.sender !== bridgeWindow?.webContents)
       throw new Error('Untrusted sender');

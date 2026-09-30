@@ -4,13 +4,17 @@ Unofficial Windows 11 browser wrapper for the [DMM/FANZA game page](https://game
 
 ## Run
 
-Install Node.js, then in this folder run `npm.cmd install` and `npm.cmd start` in PowerShell. This is a development prototype, not an installer yet. Run `npm.cmd run check` for JavaScript syntax checks.
+Install Node.js, then in this folder run `npm.cmd install` and `npm.cmd start` in PowerShell. Run `npm.cmd run check` for JavaScript syntax checks.
+
+Pushing this folder to GitHub runs `.github/workflows/windows-exe.yml` on a Windows runner. It tests the app and builds one unsigned portable exe, `CristeDesktop-0.0.1.exe`. Download it from that workflow run's Artifacts. It does not include the game. A portable Electron exe unpacks itself to a temporary folder when you launch it; that is still a single file to download. It is not code-signed, so Windows SmartScreen may warn on first launch.
 
 ## Controls
 
 Right-click the game for Home, Reload, Pin, Game only, Fullscreen, Mute, Zoom, FPS, Speed, Screenshot, and the current status. Unity hook and the diagnostic reports are not in that menu. Settings and the DMM session persist in the Electron user-data directory. Login/payment pop-ups stay inside sandboxed Electron windows; non-HTTPS navigation is blocked.
 
 The minimum window content size is the 1136 × 640 game viewport, scaled with the Zoom setting. There is no control bar. Windows title-bar and border dimensions are included in the actual minimum window size.
+
+Most RAM is the game's Unity memory, which grew to roughly 640–890 MB in the loaded build and cannot be reduced without crashing it. The wrapper only avoids extra Chromium renderer processes, spellcheck, and a spare renderer. Restart the app after this change so those process limits apply.
 
 **Game only** is enabled by default. After DMM launches the game on `play.games.dmm.co.jp`, it hides the surrounding portal and uniformly scales the 1136 × 640 game to the largest size that fits the window. At a matching aspect ratio, the game fills the area; otherwise it remains centered with only the outer space colored. The actual `games.mofushippo.com` canvas is not modified. It does not change the game's URL or move its iframe. The DMM detail/login pages remain untouched. If the site changes its layout or you need portal controls, turn Game only off. The **Layout report** button saves a JSON file containing only frame origins, element dimensions and computed colors (not login details, page text or URL paths) for diagnosing layout. Review the file before sharing.
 

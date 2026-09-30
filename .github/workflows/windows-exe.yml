@@ -1,0 +1,25 @@
+name: Package Windows exe
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - uses: actions/upload-artifact@v6
+        with:
+          name: CristeDesktop
+          path: dist/*.exe
+          if-no-files-found: error
