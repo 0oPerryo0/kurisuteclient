@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'" />
+    <title>Unity speed bridge</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="bridge-page">
+    <h2>Unity speed bridge</h2>
+    <p>This build’s only speed setter is static <code>TimeCommands.SetTimeScale(float)</code>. The whole Unity heap contains that name once and no pointer to it. <code>time.scale</code> is not in the heap, and none of the 725 exports is a time-scale function. <code>SendMessage</code> cannot call it. The fields below work only after an active GameObject has a public instance method.</p>
+    <label><input id="enabled" type="checkbox" /> Enable SendMessage bridge</label>
+    <label>GameObject name or hierarchy path <input id="object" type="text" maxlength="80" /></label>
+    <label>Method name <input id="method" type="text" maxlength="80" /></label>
+    <button id="save">Save and send current speed</button>
+    <button id="guesses" title="Probe common names at 1× and save the results">Try guesses at 1×</button>
+    <button id="analyze" title="Locally scan loaded Unity build files for speed-related symbols">Analyze Unity build</button>
+    <button id="runtime" title="List loaded Unity export names related to time scale, without calling them">Inspect Unity runtime</button>
+    <button id="pointers" title="Search the whole loaded Unity heap for the setter string and pointers to it. This may pause the game briefly and does not call the setter.">Find setter pointer</button>
+    <p id="result" role="status"></p>
+    <script src="bridge.js"></script>
+  </body>
+</html>

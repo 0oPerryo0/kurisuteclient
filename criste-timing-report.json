@@ -1,0 +1,65 @@
+{
+  "note": "No cookies, page text, requests or URLs are included.",
+  "before": {
+    "canvas": [
+      {
+        "height": 800,
+        "visibleHeight": 640,
+        "visibleWidth": 1136,
+        "width": 1420
+      }
+    ],
+    "engines": {
+      "Godot": "undefined",
+      "Laya": "undefined",
+      "Module": "undefined",
+      "PIXI": "undefined",
+      "Phaser": "undefined",
+      "UnityLoader": "undefined",
+      "cc": "undefined",
+      "createUnityInstance": "function",
+      "egret": "undefined",
+      "unityInstance": "object"
+    },
+    "now": 17313.59999999404,
+    "timing": {
+      "callbacks": 2350,
+      "cap": 0,
+      "lastReal": 17309.8,
+      "lastVirtual": 160405.732,
+      "speed": 10
+    },
+    "visible": "visible"
+  },
+  "after": {
+    "canvas": [
+      {
+        "height": 800,
+        "visibleHeight": 640,
+        "visibleWidth": 1136,
+        "width": 1420
+      }
+    ],
+    "engines": {
+      "Godot": "undefined",
+      "Laya": "undefined",
+      "Module": "undefined",
+      "PIXI": "undefined",
+      "Phaser": "undefined",
+      "UnityLoader": "undefined",
+      "cc": "undefined",
+      "createUnityInstance": "function",
+      "egret": "undefined",
+      "unityInstance": "object"
+    },
+    "now": 18514.399999976158,
+    "timing": {
+      "callbacks": 2548,
+      "cap": 0,
+      "lastReal": 18509.8,
+      "lastVirtual": 172405.732,
+      "speed": 10
+    },
+    "visible": "visible"
+  }
+}

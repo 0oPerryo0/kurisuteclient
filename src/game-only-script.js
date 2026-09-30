@@ -7,7 +7,6 @@ function gameOnlyScript(enabled) {
       const previous = new Map();
       let scheduled = false;
       let stage = null;
-      let backdrop = null;
       let colors = ['#20222a', '#20222a', '#20222a', '#20222a'];
       const remember = (element) => {
         if (!previous.has(element)) previous.set(element, element.getAttribute('style'));
@@ -17,8 +16,6 @@ function gameOnlyScript(enabled) {
         element.style.setProperty(name, value, 'important');
       };
       const restore = () => {
-        backdrop?.remove();
-        backdrop = null;
         for (const [element, style] of previous) {
           if (style === null) element.removeAttribute('style');
           else element.setAttribute('style', style);
@@ -76,7 +73,7 @@ function gameOnlyScript(enabled) {
         }
         set(document.documentElement, 'overflow', 'hidden');
         set(document.body, 'overflow', 'hidden');
-        set(document.documentElement, 'background', '#fff');
+        set(document.documentElement, 'background', '#20222a');
         set(document.body, 'background', 'transparent');
         set(stage, 'position', 'fixed');
         set(stage, 'inset', 'auto');
@@ -94,10 +91,6 @@ function gameOnlyScript(enabled) {
         set(stage, 'box-shadow', 'none');
         set(stage, 'mask-image', 'none');
         set(stage, 'z-index', '2147483647');
-        backdrop = document.createElement('div');
-        backdrop.setAttribute('aria-hidden', 'true');
-        backdrop.style.cssText = 'position:fixed!important;inset:0!important;pointer-events:none!important;z-index:2147483645!important;';
-        stage.parentElement.appendChild(backdrop);
         window[key].setColors(colors);
       };
       const schedule = () => {
@@ -116,11 +109,11 @@ function gameOnlyScript(enabled) {
           if (!Array.isArray(next) || next.length !== 4 ||
               !next.every((color) => /^#[0-9a-f]{6}$/i.test(color))) return;
           colors = next;
-          if (backdrop) backdrop.style.background =
+          if (stage) set(document.documentElement, 'background',
             'conic-gradient(from 0deg at 50% 50%, ' +
             colors[0] + ' 0deg, ' + colors[1] + ' 90deg, ' +
             colors[2] + ' 180deg, ' + colors[3] + ' 270deg, ' +
-            colors[0] + ' 360deg)';
+            colors[0] + ' 360deg)');
         },
       };
       new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });

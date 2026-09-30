@@ -1,0 +1,618 @@
+{
+  "note": "Decompressed asset matches and IL2CPP speed-related declarations only. No URLs, cookies or asset files.",
+  "engine": "Unity WebGL",
+  "assetCount": 6,
+  "assets": [
+    {
+      "name": "CryWebAws.data.unityweb",
+      "compressedBytes": 19389907,
+      "decodedBytes": 33023153,
+      "format": "gzip",
+      "truncated": false,
+      "magic": "1f8b0818d57bbb6a",
+      "hits": [
+        {
+          "term": "timescale",
+          "offset": 19091394,
+          "around": "ntCounter increment get_DisplayRateTimeScale set_DisplayRateTimeScale <DisplayR"
+        },
+        {
+          "term": "timescale",
+          "offset": 19091419,
+          "around": "isplayRateTimeScale set_DisplayRateTimeScale <DisplayRateTimeScale>k__BackingFi"
+        },
+        {
+          "term": "timescale",
+          "offset": 19091441,
+          "around": "t_DisplayRateTimeScale <DisplayRateTimeScale>k__BackingField DisplayRateTimeSca"
+        },
+        {
+          "term": "timescale",
+          "offset": 19091478,
+          "around": "meScale>k__BackingField DisplayRateTimeScale IncrementingPollingCounter totalVa"
+        },
+        {
+          "term": "timescale",
+          "offset": 19522162,
+          "around": "e set_maximumParticleDeltaTime get_timeScale set_timeScale get_frameCount get_r"
+        },
+        {
+          "term": "timescale",
+          "offset": 19522176,
+          "around": "articleDeltaTime get_timeScale set_timeScale get_frameCount get_renderedFrameCo"
+        },
+        {
+          "term": "timescale",
+          "offset": 19522665,
+          "around": "DeltaTime maximumParticleDeltaTime timeScale frameCount renderedFrameCount real"
+        },
+        {
+          "term": "timescale",
+          "offset": 19610259,
+          "around": "aiTimeZoneTicks GetFractions KatmaiTimeScaleMultiplicator SQLTicksPerMillisecon"
+        },
+        {
+          "term": "timescale",
+          "offset": 19611958,
+          "around": "s GetXsdKatmaiTokenLength XsdKatmaiTimeScaleToValueLength ValueAsLong ValueAsUL"
+        },
+        {
+          "term": "timescale",
+          "offset": 19612274,
+          "around": "TypeOfString TokenTypeMap XsdKatmaiTimeScaleToValueLengthMap ScanState2ReadStat"
+        },
+        {
+          "term": "settimescale",
+          "offset": 20597844,
+          "around": "Commands RestartScene TimeCommands SetTimeScale GetTimeScale B0ACE60A963764AE1B578"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 20450483,
+          "around": "get_nameHash get_shortNameHash get_speedMultiplier get_tagHash IsTag m_FullPath m_Nor"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 20450555,
+          "around": "ullPath m_NormalizedTime m_Speed m_SpeedMultiplier m_Tag m_Loop fullPathHash shortNam"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 20450611,
+          "around": "m_Loop fullPathHash shortNameHash speedMultiplier tagHash AnimatorTransitionInfo IsU"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 20479118,
+          "around": "t_startLifetimeMultiplier get_startSpeedMultiplier set_startSpeedMultiplier get_start"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 20479143,
+          "around": "get_startSpeedMultiplier set_startSpeedMultiplier get_startSize3D set_startSize3D ge"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 20480730,
+          "around": "d set_startSpeed_Injected get_startSpeedMultiplier_Injected set_startSpeedMultiplier_"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 20480764,
+          "around": "tSpeedMultiplier_Injected set_startSpeedMultiplier_Injected get_startSize3D_Injected"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 20482923,
+          "around": "plier startLifetimeMultiplier startSpeedMultiplier startSize3D startSizeMultiplier st"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 20484647,
+          "around": "iusSpeed set_radiusSpeed get_radiusSpeedMultiplier set_radiusSpeedMultiplier get_radi"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 20484673,
+          "around": "et_radiusSpeedMultiplier set_radiusSpeedMultiplier get_radiusThickness set_radiusThic"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 3127,
+          "around": "0>          -   W    0 iL    globalgamemanagers            Resources/unity_builti"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 4093,
+          "around": "a      sharedassets0.   *    globalgamemanagers/      &   6 s    O z  <  D~     <"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 299458,
+          "around": "Library/  \" d    resources~   g    gamemanagers.asset/     & '            r-Skybo"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 341412,
+          "around": "L &  $ &    &9   &          globalgamemanagers.assets#   /   Library/unity defau"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 364960,
+          "around": "&     *          /   2   globalgamemanagers.assets`5  Library/uT    default r"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 369996,
+          "around": "/u %   default resources(    globalgamemanagers.asset/  bshared\"  0*  x'  T"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 441233,
+          "around": "Y  DW   U  4O  PN  |L C      globalgamemanagers.assets#   /   Library/unity defau"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 18272772,
+          "around": "or missing platform in settings): GameManagerGameManager                   GameM"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 18272783,
+          "around": "platform in settings): GameManagerGameManager                   GameManager"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 18272813,
+          "around": "nagerGameManager                   GameManager             GameParasGammaGarbageC"
+        },
+        {
+          "term": "global-metadata",
+          "offset": 176,
+          "around": "figM       '   Il2CppData/Metadata/global-metadata.datQ   `]  !   Resources/unity_def"
+        }
+      ]
+    },
+    {
+      "name": "diagnostics.js",
+      "compressedBytes": 4082,
+      "decodedBytes": 4082,
+      "format": "uncompressed or unknown",
+      "truncated": false,
+      "magic": "76617220756e6974",
+      "hits": []
+    },
+    {
+      "name": "dmm_recebo.js",
+      "compressedBytes": 2714,
+      "decodedBytes": 2714,
+      "format": "uncompressed or unknown",
+      "truncated": false,
+      "magic": "76617220646d6d47",
+      "hits": []
+    },
+    {
+      "name": "CryWebAws.loader.js",
+      "compressedBytes": 44254,
+      "decodedBytes": 44254,
+      "format": "uncompressed or unknown",
+      "truncated": false,
+      "magic": "66756e6374696f6e",
+      "hits": []
+    },
+    {
+      "name": "CryWebAws.framework.js.unityweb",
+      "compressedBytes": 126200,
+      "decodedBytes": 766382,
+      "format": "gzip",
+      "truncated": false,
+      "magic": "1f8b0818eb78bb6a",
+      "hits": []
+    },
+    {
+      "name": "CryWebAws.wasm.unityweb",
+      "compressedBytes": 15878012,
+      "decodedBytes": 67484757,
+      "format": "gzip",
+      "truncated": false,
+      "magic": "1f8b0818ea78bb6a",
+      "hits": [
+        {
+          "term": "timescale",
+          "offset": 58639049,
+          "around": "1_1e17368ca73f v2f m_Vector2f Time.timeScale is out of range. The value cannot"
+        },
+        {
+          "term": "timescale",
+          "offset": 58700912,
+          "around": "TextureScale UnityEngine.Time::set_timeScale UnityEngine.Time::get_timeScale m_"
+        },
+        {
+          "term": "timescale",
+          "offset": 58700944,
+          "around": "et_timeScale UnityEngine.Time::get_timeScale m_TimeScale UnityEngine.UIElements"
+        },
+        {
+          "term": "timescale",
+          "offset": 58700956,
+          "around": "UnityEngine.Time::get_timeScale m_TimeScale UnityEngine.UIElements.StyleScale"
+        },
+        {
+          "term": "timescale",
+          "offset": 58923125,
+          "around": "UNITY_SINGLE_PASS_STEREO KeyN Time.timeScale cannot be NaN STEREO_MULTIVIEW_ON"
+        },
+        {
+          "term": "timescale",
+          "offset": 59436972,
+          "around": "stem.Single) UnityEngine.Time::set_timeScale(System.Single) UnityEngine.Surface"
+        },
+        {
+          "term": "timescale",
+          "offset": 59652287,
+          "around": "xtureScale() UnityEngine.Time::get_timeScale() UnityEngine.SurfaceEffector2D::g"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 58795421,
+          "around": "articleSystem/MainModule::set_startSpeedMultiplier_Injected UnityEngine.ParticleSyste"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 58795494,
+          "around": "articleSystem/MainModule::get_startSpeedMultiplier_Injected UnityEngine.ParticleSyste"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 58795569,
+          "around": "ticleSystem/ShapeModule::set_radiusSpeedMultiplier_Injected UnityEngine.ParticleSyste"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 58795644,
+          "around": "ticleSystem/ShapeModule::get_radiusSpeedMultiplier_Injected UnityEngine.ParticleSyste"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 58795722,
+          "around": "leSystem/ShapeModule::set_meshSpawnSpeedMultiplier_Injected UnityEngine.ParticleSyste"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 58795800,
+          "around": "leSystem/ShapeModule::get_meshSpawnSpeedMultiplier_Injected UnityEngine.ParticleSyste"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 58795875,
+          "around": "ticleSystem/NoiseModule::set_scrollSpeedMultiplier_Injected UnityEngine.ParticleSyste"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 58795950,
+          "around": "ticleSystem/NoiseModule::get_scrollSpeedMultiplier_Injected UnityEngine.ParticleSyste"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 58796022,
+          "around": "ParticleSystem/ShapeModule::set_arcSpeedMultiplier_Injected UnityEngine.ParticleSyste"
+        },
+        {
+          "term": "speedmultiplier",
+          "offset": 58796094,
+          "around": "ParticleSystem/ShapeModule::get_arcSpeedMultiplier_Injected UnityEngine.ParticleSyste"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 58436444,
+          "around": "eDirectRectangularAreaLights globalgamemanagers.assets sharedassets%d.assets shar"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 58446831,
+          "around": "_QueriesHitTriggers integers globalgamemanagers UnloadAsset may only be used on i"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 58446961,
+          "around": "t's / Components / AssetBundles or GameManagers kGL_NV_draw_buffers kGL_EXT_draw_"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 58505421,
+          "around": "ager SceneManager TimeManager LevelGameManager GlobalGameManager AssetBundleManag"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 58505439,
+          "around": "TimeManager LevelGameManager GlobalGameManager AssetBundleManager UnityEngine.Res"
+        },
+        {
+          "term": "gamemanager",
+          "offset": 59930196,
+          "around": "Player data archive: %s!  No GlobalGameManagers file was found at %s, quitting pl"
+        },
+        {
+          "term": "global-metadata",
+          "offset": 58427860,
+          "around": "ts.BackgroundRepeat -resources.dat global-metadata.dat Sat UnityEngine.QualitySetting"
+        },
+        {
+          "term": "unityengine.time",
+          "offset": 58392478,
+          "around": "SceneManager::get_loadedSceneCount UnityEngine.Time::get_frameCount UnityEngine.Mesh::"
+        },
+        {
+          "term": "unityengine.time",
+          "offset": 58392809,
+          "around": "r::InternalGetFreeSampleFrameCount UnityEngine.Time::get_renderedFrameCount droppedFra"
+        },
+        {
+          "term": "unityengine.time",
+          "offset": 58522579,
+          "around": "uctBufferKvp m_InitializeOnStartup UnityEngine.Time::get_realtimeSinceStartup UnityEng"
+        },
+        {
+          "term": "unityengine.time",
+          "offset": 58527369,
+          "around": "Timestep Maximum Allowed Timestep UnityEngine.Time::get_inFixedTimeStep m_FixedTimeSt"
+        },
+        {
+          "term": "unityengine.time",
+          "offset": 58680476,
+          "around": "ityEngine.AnimationState::get_time UnityEngine.Time::get_time UnityEngine.AudioSource:"
+        },
+        {
+          "term": "unityengine.time",
+          "offset": 58682547,
+          "around": "AnimationState::get_normalizedTime UnityEngine.Time::get_fixedTime UnityEngine.Animato"
+        },
+        {
+          "term": "unityengine.time",
+          "offset": 58682660,
+          "around": "ine.Animator::CrossFadeInFixedTime UnityEngine.Time::get_unscaledTime useUnscaledTime"
+        },
+        {
+          "term": "unityengine.time",
+          "offset": 58682711,
+          "around": "::get_unscaledTime useUnscaledTime UnityEngine.Time::get_fixedUnscaledTime m_MaxScrubT"
+        },
+        {
+          "term": "unityengine.time",
+          "offset": 58682766,
+          "around": "t_fixedUnscaledTime m_MaxScrubTime UnityEngine.Time::get_deltaTime m_MaxDeltaTime Unit"
+        },
+        {
+          "term": "unityengine.time",
+          "offset": 58682813,
+          "around": "Time::get_deltaTime m_MaxDeltaTime UnityEngine.Time::set_maximumDeltaTime UnityEngine."
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "version": 31,
+    "typeCount": 14505,
+    "methodCount": 117612,
+    "declarations": [
+      {
+        "assembly": "mscorlib.dll",
+        "namespace": "System.Diagnostics.Tracing",
+        "type": "IncrementingEventCounter",
+        "method": "set_DisplayRateTimeScale",
+        "static": false,
+        "public": true,
+        "returnTypeIndex": 35438,
+        "parameters": [
+          {
+            "name": "value",
+            "typeIndex": 34078
+          }
+        ]
+      },
+      {
+        "assembly": "mscorlib.dll",
+        "namespace": "System.Diagnostics.Tracing",
+        "type": "IncrementingPollingCounter",
+        "method": "set_DisplayRateTimeScale",
+        "static": false,
+        "public": true,
+        "returnTypeIndex": 35438,
+        "parameters": [
+          {
+            "name": "value",
+            "typeIndex": 34078
+          }
+        ]
+      },
+      {
+        "assembly": "UnityEngine.CoreModule.dll",
+        "namespace": "UnityEngine",
+        "type": "Time",
+        "method": "set_timeScale",
+        "static": true,
+        "public": true,
+        "returnTypeIndex": 35438,
+        "parameters": [
+          {
+            "name": "value",
+            "typeIndex": 32436
+          }
+        ]
+      },
+      {
+        "assembly": "System.Xml.dll",
+        "namespace": "System.Xml",
+        "type": "XmlSqlBinaryReader",
+        "method": "XsdKatmaiTimeScaleToValueLength",
+        "static": false,
+        "public": false,
+        "returnTypeIndex": 27432,
+        "parameters": [
+          {
+            "name": "scale",
+            "typeIndex": 21655
+          }
+        ]
+      },
+      {
+        "assembly": "Unity.TextMeshPro.dll",
+        "namespace": "TMPro",
+        "type": "ColorTween",
+        "method": "set_ignoreTimeScale",
+        "static": false,
+        "public": true,
+        "returnTypeIndex": 35438,
+        "parameters": [
+          {
+            "name": "value",
+            "typeIndex": 21505
+          }
+        ]
+      },
+      {
+        "assembly": "Unity.TextMeshPro.dll",
+        "namespace": "TMPro",
+        "type": "FloatTween",
+        "method": "set_ignoreTimeScale",
+        "static": false,
+        "public": true,
+        "returnTypeIndex": 35438,
+        "parameters": [
+          {
+            "name": "value",
+            "typeIndex": 21505
+          }
+        ]
+      },
+      {
+        "assembly": "spine-unity.dll",
+        "namespace": "Spine",
+        "type": "AnimationState",
+        "method": "set_TimeScale",
+        "static": false,
+        "public": true,
+        "returnTypeIndex": 35438,
+        "parameters": [
+          {
+            "name": "value",
+            "typeIndex": 32436
+          }
+        ]
+      },
+      {
+        "assembly": "spine-unity.dll",
+        "namespace": "Spine",
+        "type": "TrackEntry",
+        "method": "set_TimeScale",
+        "static": false,
+        "public": true,
+        "returnTypeIndex": 35438,
+        "parameters": [
+          {
+            "name": "value",
+            "typeIndex": 32436
+          }
+        ]
+      },
+      {
+        "assembly": "UnityEngine.UI.dll",
+        "namespace": "UnityEngine.UI.CoroutineTween",
+        "type": "ColorTween",
+        "method": "set_ignoreTimeScale",
+        "static": false,
+        "public": true,
+        "returnTypeIndex": 35438,
+        "parameters": [
+          {
+            "name": "value",
+            "typeIndex": 21505
+          }
+        ]
+      },
+      {
+        "assembly": "UnityEngine.UI.dll",
+        "namespace": "UnityEngine.UI.CoroutineTween",
+        "type": "FloatTween",
+        "method": "set_ignoreTimeScale",
+        "static": false,
+        "public": true,
+        "returnTypeIndex": 35438,
+        "parameters": [
+          {
+            "name": "value",
+            "typeIndex": 21505
+          }
+        ]
+      },
+      {
+        "assembly": "DOTween.dll",
+        "namespace": "DG.Tweening",
+        "type": "TweenExtensions",
+        "method": "IsTimeScaleIndependent",
+        "static": true,
+        "public": true,
+        "returnTypeIndex": 21505,
+        "parameters": [
+          {
+            "name": "t",
+            "typeIndex": 34381
+          }
+        ]
+      },
+      {
+        "assembly": "DOTween.dll",
+        "namespace": "",
+        "type": "<>c__DisplayClass67_0",
+        "method": "<DOTimeScale>b__1",
+        "static": false,
+        "public": false,
+        "returnTypeIndex": 35438,
+        "parameters": [
+          {
+            "name": "x",
+            "typeIndex": 32436
+          }
+        ]
+      },
+      {
+        "assembly": "DOTween.dll",
+        "namespace": "DG.Tweening",
+        "type": "ShortcutExtensions",
+        "method": "DOTimeScale",
+        "static": true,
+        "public": true,
+        "returnTypeIndex": 16447,
+        "parameters": [
+          {
+            "name": "target",
+            "typeIndex": 34381
+          },
+          {
+            "name": "endValue",
+            "typeIndex": 32436
+          },
+          {
+            "name": "duration",
+            "typeIndex": 32436
+          }
+        ]
+      },
+      {
+        "assembly": "IngameDebugConsole.Runtime.dll",
+        "namespace": "IngameDebugConsole.Commands",
+        "type": "TimeCommands",
+        "method": "SetTimeScale",
+        "static": true,
+        "public": true,
+        "returnTypeIndex": 35438,
+        "parameters": [
+          {
+            "name": "value",
+            "typeIndex": 32436
+          }
+        ]
+      }
+    ]
+  }
+}

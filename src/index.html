@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="toolbar">
+    <div class="toolbar" hidden>
       <strong title="Unofficial client">クリステの遺宝</strong>
       <button data-command="home" title="Return to the official DMM page">Home</button>
       <button data-command="reload" title="Reload the current page">Reload</button>
@@ -26,8 +26,15 @@
         <option value="60">60</option><option value="120">120*</option>
         <option value="144">144*</option>
       </select></label>
+      <label title="Speeds the game frame's browser clock. Unity may follow it; server actions and audio may stay at normal speed.">Speed <select id="speed">
+        <option value="1">1×</option><option value="2">2×*</option>
+        <option value="3">3×*</option><option value="5">5×*</option>
+        <option value="10">10×*</option>
+      </select></label>
+      <button data-command="bridge" title="Configure the Unity GameObject and method used for game speed">Unity hook</button>
       <button data-command="screenshot" title="Save a screenshot">Screenshot</button>
       <button data-command="layoutReport" title="Save layout measurements without account details or full URLs">Layout report</button>
+      <button data-command="timingReport" title="Save safe game timing diagnostics without credentials or request URLs">Timing report</button>
       <span id="status" title="Current page">Loading…</span>
     </div>
     <script src="renderer.js"></script>

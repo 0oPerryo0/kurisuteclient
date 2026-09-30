@@ -1,0 +1,29 @@
+{
+  "note": "Heap string addresses and nearby pointer words only. No calls, URLs, cookies or asset bytes.",
+  "aligned": true,
+  "bytesScanned": 670040064,
+  "elapsedMs": 8567,
+  "heapBytes": 670040064,
+  "strings": [
+    {
+      "addresses": [
+        31977919
+      ],
+      "references": [],
+      "term": "SetTimeScale"
+    },
+    {
+      "addresses": [
+        31977932
+      ],
+      "references": [],
+      "term": "GetTimeScale"
+    },
+    {
+      "addresses": [],
+      "references": [],
+      "term": "time.scale"
+    }
+  ],
+  "truncated": false
+}

@@ -1,22 +1,24 @@
-// Runs in the game's main world, not in the privileged Electron preload.
-// Throttling animation callbacks is experimental and can affect game timing.
+// Runs only in the game frame's main world, not in the privileged Electron preload.
+// A callback cap cannot change server-side game time.
 function fpsScript(cap) {
   return `(() => {
-    const target = ${JSON.stringify(cap)};
-    const key = '__cristeFpsPrototype';
-    if (!window[key] && !target) return;
+    const targetCap = ${JSON.stringify(cap)};
+    const key = '__cristeTimingPrototype';
+    if (!window[key] && !targetCap) return;
     if (!window[key]) {
       const nativeRAF = window.requestAnimationFrame.bind(window);
       const nativeCancel = window.cancelAnimationFrame.bind(window);
       let nextId = 1;
       const pending = new Map();
       let lastFrame = -Infinity;
-      window[key] = { cap: 0 };
+      const timing = window[key] = {
+        cap: 0, lastReal: null, callbacks: 0,
+      };
       window.requestAnimationFrame = function (callback) {
         const id = nextId++;
         const tick = (timestamp) => {
           if (!pending.has(id)) return;
-          const limit = window[key].cap;
+          const limit = timing.cap;
           // All callbacks scheduled for the same native frame must run together.
           if (limit && timestamp !== lastFrame && timestamp - lastFrame < 1000 / limit - 1) {
             pending.set(id, nativeRAF(tick));
@@ -24,6 +26,8 @@ function fpsScript(cap) {
           }
           pending.delete(id);
           lastFrame = timestamp;
+          timing.lastReal = timestamp;
+          timing.callbacks++;
           callback(timestamp);
         };
         pending.set(id, nativeRAF(tick));
@@ -38,7 +42,7 @@ function fpsScript(cap) {
         }
       };
     }
-    window[key].cap = target;
+    window[key].cap = targetCap;
   })();`;
 }
 

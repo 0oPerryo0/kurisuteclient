@@ -7,8 +7,10 @@ function update(state) {
   document.getElementById('mute').classList.toggle('active', state.mute);
   document.getElementById('zoom').value = String(state.zoom);
   document.getElementById('fps').value = String(state.fps);
-  status.textContent = state.status || '';
-  status.title = state.status || '';
+  document.getElementById('speed').value = String(state.speed);
+  const message = (state.status || '') + (state.speed > 1 ? ` · local clock ${state.speed}×` : '');
+  status.textContent = message;
+  status.title = message;
 }
 
 window.client.onState(update);
@@ -18,7 +20,7 @@ document.querySelectorAll('button[data-command]').forEach((button) => {
     catch (error) { status.textContent = error.message; }
   });
 });
-for (const id of ['zoom', 'fps']) {
+for (const id of ['zoom', 'fps', 'speed']) {
   document.getElementById(id).addEventListener('change', async (event) => {
     try { update(await window.client.command(id, Number(event.target.value))); }
     catch (error) { status.textContent = error.message; }
