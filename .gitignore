@@ -38,4 +38,7 @@ next-env.d.ts
 node_modules/
 dist/
 *.log
-
+*-report.json
+*guesses.json
+*pointers.json
+*runtime.json
