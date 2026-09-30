@@ -11,6 +11,7 @@ const { unityRuntimeInspectorScript } = require('./unity-runtime');
 const { unityPointerProbeScript } = require('./unity-pointer-probe');
 const { inspectAsset, decodedBytes } = require('./asset-analysis');
 const { extractMetadata, parseMetadata } = require('./il2cpp-metadata');
+const { isDmmGamePage, withRegionCookie, isDmmRegionCookie, syncRegionCookie, removeRegionCookie } = require('./region-cookie');
 
 // Unity's WASM heap is most of the RAM and cannot be shrunk. These only remove
 // extra Chromium processes and unused features.
@@ -25,7 +26,7 @@ const FPS_OPTIONS = [0, 30, 60, 120, 144];
 const SPEED_OPTIONS = [1, 2, 3, 5, 10];
 const ZOOM_OPTIONS = [0.75, 0.9, 1, 1.25, 1.5];
 const defaults = {
-  pin: false, gameOnly: true, mute: false, zoom: 1, fps: 0, speed: 1,
+  pin: false, gameOnly: true, mute: false, zoom: 1, fps: 0, speed: 1, regionCookie: true,
   bridgeEnabled: false, bridgeObject: 'GameManager', bridgeMethod: 'SetTimeScale',
   bounds: { width: 1100, height: 820 },
 };
@@ -38,6 +39,13 @@ let bridgeWindow;
 let status = 'Loading…';
 let ambientTimer;
 let ambientBusy = false;
+let regionCookieTask = Promise.resolve();
+
+function queueRegionCookieUpdate(action) {
+  regionCookieTask = regionCookieTask.catch(() => {}).then(action);
+  regionCookieTask.catch((error) => { status = `Cookie update failed: ${error.message}`; publish(); });
+  return regionCookieTask;
+}
 
 function settingsPath() { return path.join(app.getPath('userData'), 'settings.json'); }
 function save() {
@@ -55,6 +63,7 @@ function readSettings() {
       zoom: ZOOM_OPTIONS.includes(saved.zoom) ? saved.zoom : 1,
       fps: FPS_OPTIONS.includes(saved.fps) ? saved.fps : 0,
       speed: SPEED_OPTIONS.includes(saved.speed) ? saved.speed : 1,
+      regionCookie: saved.regionCookie !== false,
       bridgeEnabled: saved.bridgeEnabled === true,
       bridgeObject: typeof saved.bridgeObject === 'string' && OBJECT_NAME.test(saved.bridgeObject)
         ? saved.bridgeObject : defaults.bridgeObject,
@@ -79,6 +88,30 @@ async function runCommand(command, value) {
     case 'gameOnly': settings.gameOnly = !settings.gameOnly; applyGameOnly(); updateOsapiLayout(); updateAmbientTimer(); break;
     case 'fullscreen': window.setFullScreen(!window.isFullScreen()); break;
     case 'mute': settings.mute = !settings.mute; game.webContents.setAudioMuted(settings.mute); break;
+    case 'regionCookie': {
+      settings.regionCookie = !settings.regionCookie;
+      const enabled = settings.regionCookie;
+      await queueRegionCookieUpdate(() => enabled
+        ? syncRegionCookie(game.webContents.session.cookies)
+        : removeRegionCookie(game.webContents.session.cookies));
+      break;
+    }
+    case 'deleteCookies': {
+      const { response } = await dialog.showMessageBox(window, {
+        type: 'warning',
+        buttons: ['Cancel', 'Delete cookies'],
+        defaultId: 0,
+        cancelId: 0,
+        noLink: true,
+        title: 'Delete app cookies?',
+        message: 'Delete cookies saved by this app?',
+        detail: 'This signs you out of DMM. It does not delete your settings or cookies in your regular browser.',
+      });
+      if (response !== 1) break;
+      await game.webContents.session.clearStorageData({ storages: ['cookies'] });
+      status = 'App cookies deleted. Use Home or Reload to sign in again.';
+      break;
+    }
     case 'zoom':
       if (!ZOOM_OPTIONS.includes(value)) throw new Error('Invalid zoom');
       settings.zoom = value; game.webContents.setZoomFactor(value); updateMinimumSize(); break;
@@ -138,6 +171,9 @@ function showClientMenu(params = {}) {
     { label: 'Game only', type: 'checkbox', checked: settings.gameOnly, click: () => runCommand('gameOnly') },
     { label: 'Fullscreen', type: 'checkbox', checked: !!window?.isFullScreen(), click: () => runCommand('fullscreen') },
     { label: 'Mute', type: 'checkbox', checked: settings.mute, click: () => runCommand('mute') },
+    { label: 'DMM region cookie override', type: 'checkbox', checked: settings.regionCookie,
+      click: () => runCommand('regionCookie') },
+    { label: 'Delete cookies…', click: () => runCommand('deleteCookies').catch((error) => { status = error.message; publish(); }) },
     { label: 'Zoom', submenu: choose('zoom', settings.zoom, ZOOM_OPTIONS, (value) => `${Math.round(value * 100)}%`) },
     { label: 'FPS', submenu: choose('fps', settings.fps, FPS_OPTIONS, (value) => value ? String(value) : 'Native') },
     { label: 'Speed', submenu: choose('speed', settings.speed, SPEED_OPTIONS, (value) => `${value}×`) },
@@ -593,6 +629,24 @@ app.whenReady().then(() => {
   // Keep the DMM login session in this app, not in the user's regular browser.
   const gameSession = session.fromPartition('persist:criste');
   gameSession.setSpellCheckerEnabled(false);
+  gameSession.cookies.on('changed', (_event, cookie, cause, removed) => {
+    if (!settings.regionCookie || removed || !isDmmRegionCookie(cookie) ||
+        cookie.value === 'ec_mrnhbtk') return;
+    queueRegionCookieUpdate(() => settings.regionCookie
+      ? syncRegionCookie(gameSession.cookies) : Promise.resolve());
+  });
+  queueRegionCookieUpdate(() => syncRegionCookie(gameSession.cookies));
+  gameSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    if (!settings.regionCookie || !['mainFrame', 'subFrame'].includes(details.resourceType) ||
+        !isDmmGamePage(details.url)) {
+      callback({ requestHeaders: details.requestHeaders });
+      return;
+    }
+    const headers = { ...details.requestHeaders };
+    const name = Object.keys(headers).find((key) => key.toLowerCase() === 'cookie') || 'Cookie';
+    headers[name] = withRegionCookie(headers[name]);
+    callback({ requestHeaders: headers });
+  });
   ipcMain.handle('client:command', async (event, command, value) => {
     if (event.sender !== window.webContents && event.sender !== bridgeWindow?.webContents)
       throw new Error('Untrusted sender');

@@ -1,6 +1,6 @@
 {
   "name": "criste-desktop",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": true,
   "description": "Unofficial Windows desktop wrapper for クリステの遺宝",
   "author": "Unofficial",
@@ -8,7 +8,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test test/*.test.js",
-    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/bridge.js && node --check src/fps-script.js && node --check src/game-only-script.js && node --check src/osapi-layout-script.js && node --check src/unity-guesses.js && node --check src/unity-build-analyzer.js && node --check src/asset-analysis.js && node --check src/il2cpp-metadata.js && node --check src/unity-runtime.js && node --check src/unity-pointer-probe.js && node --check src/game-clock.js",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/bridge.js && node --check src/fps-script.js && node --check src/game-only-script.js && node --check src/osapi-layout-script.js && node --check src/unity-guesses.js && node --check src/unity-build-analyzer.js && node --check src/asset-analysis.js && node --check src/il2cpp-metadata.js && node --check src/unity-runtime.js && node --check src/unity-pointer-probe.js && node --check src/game-clock.js && node --check src/region-cookie.js",
     "dist": "electron-builder --win portable"
   },
   "build": {

@@ -3,6 +3,7 @@
 Unofficial Windows client for the [DMM game page](https://games.dmm.co.jp/detail/charsapple_x_879635). It does not include the game. Log in on DMM's own pages. You must meet the site's age requirements.
 
 Right-click the game for controls. Settings and the DMM session stay in this app's AppData folder.
+Use **Delete cookies…** in that menu to clear this app's cookies after confirming; this signs you out without changing settings or your regular browser's cookies.
 
 - Game-only view with uniform scaling
 - Ambient background sampled from the game edges
@@ -13,5 +14,4 @@ Right-click the game for controls. Settings and the DMM session stay in this app
 - FPS cap
 - Speed control
 - Screenshot
-
-`npm.cmd install` then `npm.cmd start` to run from source. A push to GitHub builds `CristeDesktop-0.0.3.exe` and uploads it as a workflow artifact. The exe is unsigned, so SmartScreen may warn on first launch.
+- Optional DMM region-cookie override (on by default; toggle in right-click menu)
