@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>クリステの遺宝 Desktop</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="toolbar">
+      <strong title="Unofficial client">クリステの遺宝</strong>
+      <button data-command="home" title="Return to the official DMM page">Home</button>
+      <button data-command="reload" title="Reload the current page">Reload</button>
+      <button data-command="pin" id="pin">Pin</button>
+      <button data-command="gameOnly" id="gameOnly" title="Show only the game; toggle off to use the DMM portal">Game only</button>
+      <button data-command="fullscreen" id="fullscreen">Fullscreen</button>
+      <button data-command="mute" id="mute">Mute</button>
+      <label>Zoom <select id="zoom">
+        <option value="0.75">75%</option><option value="0.9">90%</option>
+        <option value="1">100%</option><option value="1.25">125%</option>
+        <option value="1.5">150%</option>
+      </select></label>
+      <label title="Experimental callback cap. Higher values do not guarantee an unlock.">FPS <select id="fps">
+        <option value="0">Native</option><option value="30">30</option>
+        <option value="60">60</option><option value="120">120*</option>
+        <option value="144">144*</option>
+      </select></label>
+      <button data-command="screenshot" title="Save a screenshot">Screenshot</button>
+      <button data-command="layoutReport" title="Save layout measurements without account details or full URLs">Layout report</button>
+      <span id="status" title="Current page">Loading…</span>
+    </div>
+    <script src="renderer.js"></script>
+  </body>
+</html>
