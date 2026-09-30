@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # クリステの遺宝 Desktop (prototype)
 
 Unofficial Windows 11 browser wrapper for the [DMM/FANZA game page](https://games.dmm.co.jp/detail/charsapple_x_879635). It does not include the game or request your credentials; log in on DMM's own pages. You must meet the site's age requirements.
