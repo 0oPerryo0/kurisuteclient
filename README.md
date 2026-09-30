@@ -6,7 +6,7 @@ Unofficial Windows 11 browser wrapper for the [DMM/FANZA game page](https://game
 
 Install Node.js, then in this folder run `npm.cmd install` and `npm.cmd start` in PowerShell. Run `npm.cmd run check` for JavaScript syntax checks.
 
-Pushing this folder to GitHub runs `.github/workflows/windows-exe.yml` on a Windows runner. It tests the app and builds one unsigned portable exe, `CristeDesktop-0.0.1.exe`. Download it from that workflow run's Artifacts. It does not include the game. A portable Electron exe unpacks itself to a temporary folder when you launch it; that is still a single file to download. It is not code-signed, so Windows SmartScreen may warn on first launch.
+Pushing this folder to GitHub runs `.github/workflows/windows-exe.yml` on a Windows runner. It tests the app and builds one unsigned portable exe, `CristeDesktop-0.0.2.exe`. Download it from that workflow run's Artifacts. It does not include the game. A portable Electron exe unpacks itself to a temporary folder when you launch it; that is still a single file to download. It is not code-signed, so Windows SmartScreen may warn on first launch.
 
 ## Controls
 

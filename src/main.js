@@ -153,6 +153,20 @@ function resizeGame() {
   const [width, height] = window.getContentSize();
   game.setBounds({ x: 0, y: TOOLBAR_HEIGHT, width, height: Math.max(0, height - TOOLBAR_HEIGHT) });
 }
+function wakeGameView() {
+  if (!window || window.isDestroyed() || window.isMinimized() || !game || game.webContents.isDestroyed()) return;
+  resizeGame();
+  const bounds = game.getBounds();
+  if (bounds.width < 2 || bounds.height < 2) return;
+  // Child views can keep a discarded frame after the taskbar hides and restores the window.
+  game.setBounds({ ...bounds, height: bounds.height - 1 });
+  game.setBounds(bounds);
+}
+function wakeGameViewSoon() {
+  wakeGameView();
+  setTimeout(wakeGameView, 50);
+  setTimeout(wakeGameView, 200);
+}
 function updateMinimumSize() {
   // BrowserWindow minimums include Windows' non-client title bar and borders.
   const [outerWidth, outerHeight] = window.getSize();
@@ -523,15 +537,19 @@ function createWindow() {
     title: 'クリステの遺宝 — Unofficial Desktop Prototype',
     icon: APP_ICON,
     backgroundColor: '#181b25',
+    show: false,
     autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: true, spellcheck: false },
   });
   game = new WebContentsView({
-    webPreferences: { partition: 'persist:criste', nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, spellcheck: false, backgroundThrottling: true },
+    webPreferences: { partition: 'persist:criste', nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, spellcheck: false, backgroundThrottling: false },
   });
   window.contentView.addChildView(game);
   resizeGame();
   window.on('resize', resizeGame);
+  window.once('ready-to-show', () => { if (!window.isDestroyed()) window.show(); });
+  window.on('restore', wakeGameViewSoon);
+  window.on('show', wakeGameViewSoon);
   window.on('enter-full-screen', publish);
   window.on('leave-full-screen', publish);
   window.on('close', () => {
