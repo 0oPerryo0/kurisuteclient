@@ -2,12 +2,17 @@ const { app, BrowserWindow, Menu, WebContentsView, ipcMain, dialog, session, web
 const fs = require('node:fs');
 const path = require('node:path');
 const { fpsScript } = require('./fps-script');
-const { gameClockScript } = require('./game-clock');
+const { gameClockScript, SPEED_OPTIONS, selectSpeed } = require('./game-clock');
 const { gameOnlyScript } = require('./game-only-script');
 const { osapiLayoutScript } = require('./osapi-layout-script');
 const { guessScript, OBJECTS, METHODS } = require('./unity-guesses');
 const { unityBuildResourceListScript } = require('./unity-build-analyzer');
 const { unityRuntimeInspectorScript } = require('./unity-runtime');
+const { storyDiagnosticScript } = require('./story-diagnostic');
+const { storyRuntimeProbeScript } = require('./story-runtime-probe');
+const { isGameAsset, manifestAssets } = require('./game-asset-cache');
+const { createGameAssetCache } = require('./game-asset-session');
+const { gameAssetListScript } = require('./game-asset-list');
 const { unityPointerProbeScript } = require('./unity-pointer-probe');
 const { inspectAsset, decodedBytes } = require('./asset-analysis');
 const { extractMetadata, parseMetadata } = require('./il2cpp-metadata');
@@ -23,7 +28,6 @@ const TOOLBAR_HEIGHT = 0;
 const GAME_WIDTH = 1136;
 const GAME_HEIGHT = 640;
 const FPS_OPTIONS = [0, 30, 60, 120, 144];
-const SPEED_OPTIONS = [1, 2, 3, 5, 10];
 const ZOOM_OPTIONS = [0.75, 0.9, 1, 1.25, 1.5];
 const defaults = {
   pin: false, gameOnly: true, mute: false, zoom: 1, fps: 0, speed: 1, regionCookie: true,
@@ -39,6 +43,9 @@ let bridgeWindow;
 let status = 'Loading…';
 let ambientTimer;
 let ambientBusy = false;
+let assetCache;
+let assetDownloadController;
+let assetDownloadTask;
 let regionCookieTask = Promise.resolve();
 
 function queueRegionCookieUpdate(action) {
@@ -62,6 +69,7 @@ function readSettings() {
       mute: saved.mute === true,
       zoom: ZOOM_OPTIONS.includes(saved.zoom) ? saved.zoom : 1,
       fps: FPS_OPTIONS.includes(saved.fps) ? saved.fps : 0,
+      // Hidden 99× must be activated explicitly again after restarting the app.
       speed: SPEED_OPTIONS.includes(saved.speed) ? saved.speed : 1,
       regionCookie: saved.regionCookie !== false,
       bridgeEnabled: saved.bridgeEnabled === true,
@@ -79,7 +87,7 @@ function readSettings() {
 function state() {
   return { ...settings, fullscreen: window.isFullScreen(), status };
 }
-async function runCommand(command, value) {
+async function runCommand(command, value, menuEvent) {
   switch (command) {
     case 'state': break;
     case 'home': await game.webContents.loadURL(HOME); break;
@@ -119,10 +127,9 @@ async function runCommand(command, value) {
       if (!FPS_OPTIONS.includes(value)) throw new Error('Invalid FPS');
       settings.fps = value; applyFps(); break;
     case 'speed':
-      if (!SPEED_OPTIONS.includes(value)) throw new Error('Invalid speed');
-      settings.speed = value;
+      settings.speed = selectSpeed(value, menuEvent);
       applySpeed();
-      status = value === 1 ? 'Game clock at 1×' : `Game clock at ${value}×. Reload the game if it already started.`;
+      status = settings.speed === 1 ? 'Game clock at 1×' : `Game clock at ${settings.speed}×. Reload the game if it already started.`;
       break;
     case 'bridge': openBridgeWindow(); break;
     case 'bridgeSettings': {
@@ -142,6 +149,29 @@ async function runCommand(command, value) {
     case 'analyzeUnityBuild': return { ...state(), status: await analyzeUnityBuild() };
     case 'inspectUnityRuntime': return { ...state(), status: await inspectUnityRuntime() };
     case 'probeUnityPointers': return { ...state(), status: await probeUnityPointers() };
+    case 'storyDiagnostic': status = await inspectStoryUi(); break;
+    case 'storyRuntimeProbe': status = await inspectStoryRuntime(); break;
+    case 'downloadAssets': {
+      if (assetDownloadController) break;
+      assetDownloadTask = downloadGameAssets();
+      try { status = await assetDownloadTask; } finally { assetDownloadTask = null; }
+      break;
+    }
+    case 'cancelAssetDownload': assetDownloadController?.abort(); status = 'Canceling asset download…'; break;
+    case 'clearGameCache': {
+      const { response } = await dialog.showMessageBox(window, {
+        type: 'warning', title: 'Clear game cache?', message: 'Delete downloaded game resources?',
+        detail: 'Future loads will download resources again. Your login cookies and app settings are kept.',
+        buttons: ['Cancel', 'Clear cache'], defaultId: 0, cancelId: 0, noLink: true,
+      });
+      if (response !== 1) break;
+      assetDownloadController?.abort();
+      if (assetDownloadTask) await assetDownloadTask.catch(() => {});
+      await assetCache.clear();
+      await game.webContents.session.clearCache();
+      status = 'Game cache cleared. Open pages may download resources again.';
+      break;
+    }
     case 'screenshot': {
       const file = await dialog.showSaveDialog(window, { defaultPath: 'criste-screenshot.png', filters: [{ name: 'PNG image', extensions: ['png'] }] });
       if (!file.canceled && file.filePath) fs.writeFileSync(file.filePath, (await game.webContents.capturePage()).toPNG());
@@ -158,7 +188,7 @@ async function runCommand(command, value) {
 function showClientMenu(params = {}) {
   const choose = (command, current, options, label) => options.map((value) => ({
     label: label(value), type: 'radio', checked: current === value,
-    click: () => runCommand(command, value).catch((error) => { status = error.message; publish(); }),
+    click: (_item, _window, event) => runCommand(command, value, event).catch((error) => { status = error.message; publish(); }),
   }));
   const edit = params.isEditable
     ? [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }, { type: 'separator' }]
@@ -176,8 +206,17 @@ function showClientMenu(params = {}) {
     { label: 'Delete cookies…', click: () => runCommand('deleteCookies').catch((error) => { status = error.message; publish(); }) },
     { label: 'Zoom', submenu: choose('zoom', settings.zoom, ZOOM_OPTIONS, (value) => `${Math.round(value * 100)}%`) },
     { label: 'FPS', submenu: choose('fps', settings.fps, FPS_OPTIONS, (value) => value ? String(value) : 'Native') },
-    { label: 'Speed', submenu: choose('speed', settings.speed, SPEED_OPTIONS, (value) => `${value}×`) },
+    { label: settings.speed === 99 ? 'Speed (99×)' : 'Speed',
+      submenu: choose('speed', settings.speed === 99 ? 10 : settings.speed, SPEED_OPTIONS, (value) => `${value}×`) },
     { label: 'Screenshot', click: () => runCommand('screenshot').catch((error) => { status = error.message; publish(); }) },
+    { label: 'Story UI diagnostic…', click: () => runCommand('storyDiagnostic').catch((error) => { status = error.message; publish(); }) },
+    { label: 'Story runtime probe…', click: () => runCommand('storyRuntimeProbe').catch((error) => { status = error.message; publish(); }) },
+    { type: 'separator' },
+    { label: 'Download game assets…', enabled: !assetDownloadController,
+      click: () => runCommand('downloadAssets').catch((error) => { status = error.message; publish(); }) },
+    { label: 'Cancel asset download', enabled: !!assetDownloadController,
+      click: () => runCommand('cancelAssetDownload').catch((error) => { status = error.message; publish(); }) },
+    { label: 'Clear game cache…', click: () => runCommand('clearGameCache').catch((error) => { status = error.message; publish(); }) },
     { type: 'separator' },
     { label: String(status || 'Loading…').slice(0, 140), enabled: false },
   ]).popup({ window });
@@ -353,6 +392,90 @@ async function analyzeUnityBuild() {
   return bridge
     ? `${bridge.type}.${bridge.method} is ${bridge.static ? 'static' : 'an instance method'}. ${bridge.note}`
     : `Inspected ${report.assets.length} of ${report.assetCount} Unity assets. Review the saved report.`;
+}
+async function downloadGameAssets() {
+  const frame = gameFrame();
+  if (!frame) throw new Error('Load the game before downloading its assets');
+  const { response } = await dialog.showMessageBox(window, {
+    type: 'question', title: 'Download game assets', message: 'Download all discoverable game assets?',
+    detail: 'This warms the browser disk cache and keeps a separate asset copy (copy limit: 2 GiB). Loaded resources and readable manifest references are included. Some assets may remain undiscoverable. This may use substantial bandwidth and disk space.',
+    buttons: ['Cancel', 'Download'], defaultId: 0, cancelId: 0, noLink: true,
+  });
+  if (response !== 1) return 'Asset download canceled';
+  if (assetDownloadController) return 'Asset download already running';
+  const controller = new AbortController();
+  assetDownloadController = controller;
+  let completed = 0, failed = 0;
+  try {
+    const seen = new Set((await frame.executeJavaScript(gameAssetListScript())).filter(isGameAsset));
+    const queue = [...seen];
+    const worker = async () => {
+      while (queue.length && !controller.signal.aborted) {
+        const url = queue.shift();
+        try {
+          const response = await assetCache.prefetch(url, { signal: controller.signal });
+          if (!response.ok) throw new Error('Asset unavailable');
+          const isManifest = /\/DefaultPackage_[^/]+\.bytes(?:\?|$)/i.test(url);
+          const reader = response.body?.getReader();
+          const chunks = []; let length = 0;
+          if (reader) {
+            try {
+              while (true) {
+                if (controller.signal.aborted) throw new Error('Canceled');
+                const { value, done } = await reader.read();
+                if (done) break;
+                if (isManifest) {
+                  length += value.length;
+                  if (length > 16 * 1024 * 1024) throw new Error('Manifest exceeds discovery limit');
+                  chunks.push(Buffer.from(value));
+                }
+              }
+            } finally { await reader.cancel().catch(() => {}); }
+          }
+          if (isManifest) for (const asset of manifestAssets(Buffer.concat(chunks), url)) {
+            if (!seen.has(asset) && seen.size < 5000) { seen.add(asset); queue.push(asset); }
+          }
+          completed++;
+        } catch { if (!controller.signal.aborted) failed++; }
+        status = `Assets: ${completed} fetched, ${failed} failed, ${queue.length} queued`;
+        publish();
+      }
+    };
+    await Promise.all([worker(), worker(), worker()]);
+    await Promise.all([...assetCache.pending]);
+    return `${controller.signal.aborted ? 'Download canceled' : 'Asset download finished'}: ${completed} fetched, ${failed} failed. Cache follows origin rules; discovery may be incomplete.`;
+  } finally { assetDownloadController = null; }
+}
+async function inspectStoryRuntime() {
+  const frame = gameFrame();
+  if (!frame) throw new Error('Open a story before running the runtime probe');
+  const file = await dialog.showSaveDialog(window, {
+    defaultPath: 'criste-story-runtime-report.json', filters: [{ name: 'JSON report', extensions: ['json'] }],
+  });
+  if (file.canceled || !file.filePath) return 'Story runtime probe canceled';
+  status = 'Read-only story runtime scan… This can take up to two minutes.';
+  publish();
+  const report = await frame.executeJavaScript(storyRuntimeProbeScript());
+  fs.writeFileSync(file.filePath, JSON.stringify(report, null, 2));
+  return report.error || 'Story runtime report saved. Candidate addresses are not verified objects.';
+}
+async function inspectStoryUi() {
+  const frame = gameFrame();
+  if (!frame) throw new Error('Open a story in the game before running this diagnostic');
+  const file = await dialog.showSaveDialog(window, {
+    defaultPath: 'criste-story-ui-report.json', filters: [{ name: 'JSON report', extensions: ['json'] }],
+  });
+  if (file.canceled || !file.filePath) return 'Story UI diagnostic canceled';
+  status = 'Scanning story UI names in memory… This may take a few seconds.';
+  publish();
+  const report = await frame.executeJavaScript(storyDiagnosticScript());
+  fs.writeFileSync(file.filePath, JSON.stringify({
+    note: 'Read-only story UI inspection. No Unity methods were called. No cookies, request headers, full URLs, screenshots or dialogue text are deliberately collected. Review candidate names before sharing.',
+    ...report,
+  }, null, 2));
+  return report.unityReady
+    ? 'Story UI report saved. Share the JSON report for inspection.'
+    : 'Report saved, but Unity was not ready. Open a story and try again.';
 }
 async function inspectUnityRuntime() {
   const frame = gameFrame();
@@ -629,6 +752,7 @@ app.whenReady().then(() => {
   // Keep the DMM login session in this app, not in the user's regular browser.
   const gameSession = session.fromPartition('persist:criste');
   gameSession.setSpellCheckerEnabled(false);
+  assetCache = createGameAssetCache(gameSession, path.join(app.getPath('userData'), 'game-assets'));
   gameSession.cookies.on('changed', (_event, cookie, cause, removed) => {
     if (!settings.regionCookie || removed || !isDmmRegionCookie(cookie) ||
         cookie.value === 'ec_mrnhbtk') return;

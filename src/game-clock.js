@@ -1,4 +1,10 @@
-const SPEEDS = [1, 2, 3, 5, 10];
+const SPEED_OPTIONS = [1, 2, 3, 5, 10];
+const SPEEDS = [...SPEED_OPTIONS, 99];
+
+function selectSpeed(value, menuEvent) {
+  if (!SPEED_OPTIONS.includes(value)) throw new Error('Invalid speed');
+  return value === 10 && menuEvent?.ctrlKey === true ? 99 : value;
+}
 
 function createClock(nativeNow, initialSpeed = 1) {
   const state = { speed: SPEEDS.includes(initialSpeed) ? initialSpeed : 1 };
@@ -32,7 +38,7 @@ function gameClockScript(speed) {
     window.__cristeClock = {
       now, speed: () => state.speed,
       setSpeed(value) {
-        if (![1, 2, 3, 5, 10].includes(value)) return false;
+        if (!${JSON.stringify(SPEEDS)}.includes(value)) return false;
         state.virtualBase = now();
         state.realBase = native();
         state.speed = value;
@@ -42,4 +48,4 @@ function gameClockScript(speed) {
   })();`;
 }
 
-module.exports = { SPEEDS, createClock, gameClockScript };
+module.exports = { SPEED_OPTIONS, SPEEDS, selectSpeed, createClock, gameClockScript };
