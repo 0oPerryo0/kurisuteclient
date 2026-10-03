@@ -1,5 +1,5 @@
 // Reads a managed PE image already in memory. Never executes its code.
-function inspectManagedStoryAssembly(heap, base) {
+function inspectManagedStoryAssembly(heap, base, mode = 'story') {
   try {
     const max = Math.min(heap.length - base, 32 * 1024 * 1024);
     const check = (p, n) => {
@@ -85,9 +85,10 @@ function inspectManagedStoryAssembly(heap, base) {
       indexSize(8), 4 + stringSize,
       indexSize(2) + codedSize(2, [2, 1, 27]),
       codedSize(3, [2, 1, 26, 6, 27]) + stringSize + blobSize,
+      2 + codedSize(2, [4, 8, 23]) + blobSize,
     ];
     const starts = [];
-    for (let i = 0; i <= 10; i++) { starts[i] = cursor; cursor += rows[i] * sizes[i]; }
+    for (let i = 0; i <= 11; i++) { starts[i] = cursor; cursor += rows[i] * sizes[i]; }
     if (cursor > tables.offset + tables.size) return null;
     const index = (p, size) => size === 2 ? u16(p) : u32(p);
     const str = (p) => {
@@ -129,6 +130,100 @@ function inspectManagedStoryAssembly(heap, base) {
       return { parameterCount, returnType, parameterTypes,
         fullyDecoded: parameterTypes.length === parameterCount && !parameterTypes.includes('complex') && state.p === end };
     };
+    if (mode === 'player-protocol') {
+      const constantNumbers = new Map();
+      const parentSize = codedSize(2, [4, 8, 23]);
+      for (let i = 0; i < rows[11]; i++) {
+        const p = starts[11] + i * sizes[11];
+        const parent = index(p + 2, parentSize);
+        if ((parent & 3) !== 0 || heap[base + p] !== 8) continue;
+        const blobIndex = index(p + 2 + parentSize, blobSize);
+        if (!blobIndex || blobIndex >= blobs.size) continue;
+        const state = { p: blobs.offset + blobIndex };
+        if (compressed(state) !== 4 || state.p + 4 > blobs.offset + blobs.size) continue;
+        const number = u32(state.p);
+        if (number >= 1 && number <= 4096) constantNumbers.set(parent >>> 2, number);
+      }
+      const namedType = (coded) => {
+        const row = coded >>> 2, table = [2, 1, 27][coded & 3];
+        if (!row || ![1, 2].includes(table) || row > rows[table]) return null;
+        const p = starts[table] + (row - 1) * sizes[table];
+        const at = p + (table === 2 ? 4 : codedSize(2, [0, 26, 35, 1]));
+        return { type: str(at), namespace: str(at + stringSize) };
+      };
+      const fieldSignature = (p) => {
+        try {
+          const blobIndex = index(p, blobSize);
+          if (!blobIndex || blobIndex >= blobs.size) return null;
+          const state = { p: blobs.offset + blobIndex };
+          const length = compressed(state), end = state.p + length;
+          if (length > 100 || end > blobs.offset + blobs.size || heap[base + state.p++] !== 6) return null;
+          const parse = (depth = 0) => {
+            if (depth > 4 || state.p >= end) return null;
+            const kind = heap[base + state.p++];
+            const primitive = { 2: 'bool', 8: 'int32', 9: 'uint32', 10: 'int64', 11: 'uint64',
+              12: 'float', 13: 'double', 14: 'string', 5: 'uint8' };
+            if (primitive[kind]) return { valueType: primitive[kind] };
+            if ([17, 18].includes(kind)) return { valueType: 'message', messageType: namedType(compressed(state)) };
+            if (kind === 29) return { valueType: 'array', element: parse(depth + 1) };
+            if (kind === 21) {
+              const generic = parse(depth + 1), count = compressed(state);
+              if (count > 4) return null;
+              const args = Array.from({ length: count }, () => parse(depth + 1));
+              if (/^RepeatedField/.test(generic?.messageType?.type || '') && count === 1)
+                return { valueType: 'repeated', element: args[0] };
+            }
+            return null;
+          };
+          return parse();
+        } catch { return null; }
+      };
+      const protocolTypes = [];
+      for (let i = 0; i < rows[2]; i++) {
+        const p = starts[2] + i * sizes[2];
+        const type = str(p + 4), namespace = str(p + 4 + stringSize);
+        if (!type || /^Google[.]Protobuf/.test(namespace || '')) continue;
+        const at = sizes[2] - indexSize(6) - indexSize(4);
+        const first = index(p + at, indexSize(4));
+        const next = i + 1 < rows[2] ? index(p + sizes[2] + at, indexSize(4)) : rows[4] + 1;
+        if (!first || first > next || next > rows[4] + 1 || next - first > 8192) continue;
+        const members = [];
+        for (let row = first; row < next; row++) {
+          const q = starts[4] + (row - 1) * sizes[4];
+          members.push({ row, at: q, name: str(q + 2), flags: u16(q) });
+        }
+        const fields = [];
+        for (const member of members) {
+          if (!member.name?.endsWith('FieldNumber') || !(member.flags & 64)) continue;
+          const number = constantNumbers.get(member.row);
+          if (!number) continue;
+          const name = member.name.slice(0, -11);
+          const backing = members.find((item) => item.name?.replace(/^_+|_+$/g, '').toLowerCase() === name.toLowerCase());
+          fields.push({ name, number, ...(backing ? fieldSignature(backing.at + 2 + stringSize) : {}) });
+        }
+        if (fields.length && protocolTypes.length < 1500) protocolTypes.push({ type, namespace, fields });
+      }
+      const observedTags = new Set([11, 15, 101, 1024, 1050, 1060, 1062]);
+      const selected = new Map();
+      const typeKey = (item) => (item.namespace || '') + '.' + item.type;
+      const allTypes = new Map(protocolTypes.map((item) => [typeKey(item), item]));
+      const select = (item) => {
+        const key = typeKey(item);
+        if (selected.has(key) || selected.size >= 250) return;
+        selected.set(key, item);
+        for (const field of item.fields) {
+          const target = field.messageType || field.element?.messageType;
+          if (target && allTypes.has(typeKey(target))) select(allTypes.get(typeKey(target)));
+        }
+      };
+      for (const item of protocolTypes) if (item.fields.some((field) => observedTags.has(field.number) && field.number >= 100)) select(item);
+      for (const item of protocolTypes) if (/player|userinfo|userbase|roleinfo|rolebase|login|profile/i.test(item.type) ||
+          item.fields.some((field) => /nickname|playername|rolename|level|stamina|vitality|physicalpower|energy/i.test(field.name))) select(item);
+      return protocolTypes.length ? { moduleName: rows[0] ? str(starts[0] + 2) : null,
+        generatedTypeCount: protocolTypes.length, protocolTypes: [...selected.values()],
+        selectionLimitReached: selected.size >= 250,
+        note: 'Field numbers are read from managed metadata Constant rows, and types from field signatures. No runtime object values or methods are read or called. Matching message names still needs verification.' } : null;
+    }
     const methodOwner = (row) => {
       for (let i = 0; i < rows[2]; i++) {
         const p = starts[2] + i * sizes[2];

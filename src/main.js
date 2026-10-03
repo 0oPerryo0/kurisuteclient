@@ -13,6 +13,11 @@ const { storyRuntimeProbeScript } = require('./story-runtime-probe');
 const { isGameAsset, manifestAssets } = require('./game-asset-cache');
 const { createGameAssetCache } = require('./game-asset-session');
 const { gameAssetListScript } = require('./game-asset-list');
+const { PlayerApiFrameDiagnostic } = require('./player-api-frame-diagnostic');
+const { playerProtocolSchemaScript } = require('./player-protocol-schema');
+const { PlayerStateMonitor } = require('./player-state-monitor');
+const { DiscordPresence, DISCORD_APPLICATION_ID } = require('./discord-presence');
+const { DEFAULT_WINDOW_TITLE, attachPlayerWindowTitle } = require('./player-window-title');
 const { unityPointerProbeScript } = require('./unity-pointer-probe');
 const { inspectAsset, decodedBytes } = require('./asset-analysis');
 const { extractMetadata, parseMetadata } = require('./il2cpp-metadata');
@@ -32,6 +37,8 @@ const ZOOM_OPTIONS = [0.75, 0.9, 1, 1.25, 1.5];
 const defaults = {
   pin: false, gameOnly: true, mute: false, zoom: 1, fps: 0, speed: 1, regionCookie: true,
   bridgeEnabled: false, bridgeObject: 'GameManager', bridgeMethod: 'SetTimeScale',
+  discordPresence: false,
+  playerWindowTitle: true,
   bounds: { width: 1100, height: 820 },
 };
 const OBJECT_NAME = /^[\w /-]{1,80}$/;
@@ -46,7 +53,24 @@ let ambientBusy = false;
 let assetCache;
 let assetDownloadController;
 let assetDownloadTask;
+let playerApiDiagnostic;
+let playerStateMonitor;
+let discordPresence;
+let playerTitle;
+let presenceTask = Promise.resolve();
 let regionCookieTask = Promise.resolve();
+
+function recordProcessExit(processType, details) {
+  if (details.reason === 'clean-exit') return;
+  // Only native exit metadata, not URLs, page content, cookies or API payloads.
+  const record = { time: new Date().toISOString(), processType,
+    reason: details.reason, exitCode: details.exitCode, playerApiCaptureActive: !!playerApiDiagnostic?.active };
+  console.error('Client process exit:', JSON.stringify(record));
+  try {
+    fs.mkdirSync(app.getPath('userData'), { recursive: true });
+    fs.appendFileSync(path.join(app.getPath('userData'), 'client-process-exits.jsonl'), JSON.stringify(record) + '\n');
+  } catch { /* Exit reporting must not cause another failure. */ }
+}
 
 function queueRegionCookieUpdate(action) {
   regionCookieTask = regionCookieTask.catch(() => {}).then(action);
@@ -73,6 +97,8 @@ function readSettings() {
       speed: SPEED_OPTIONS.includes(saved.speed) ? saved.speed : 1,
       regionCookie: saved.regionCookie !== false,
       bridgeEnabled: saved.bridgeEnabled === true,
+      discordPresence: saved.discordPresence === true,
+      playerWindowTitle: saved.playerWindowTitle !== false,
       bridgeObject: typeof saved.bridgeObject === 'string' && OBJECT_NAME.test(saved.bridgeObject)
         ? saved.bridgeObject : defaults.bridgeObject,
       bridgeMethod: typeof saved.bridgeMethod === 'string' && METHOD_NAME.test(saved.bridgeMethod)
@@ -85,13 +111,37 @@ function readSettings() {
   } catch { return { ...defaults }; }
 }
 function state() {
-  return { ...settings, fullscreen: window.isFullScreen(), status };
+  return { ...settings, fullscreen: window.isFullScreen(), status,
+    discordStatus: discordPresence?.status || 'Disabled' };
+}
+function updatePresence() {
+  // Serialize privacy reconfiguration so an old reader cannot republish a name.
+  discordPresence?.stop();
+  playerTitle?.setPlayer(null);
+  presenceTask = presenceTask.catch(() => {}).then(async () => {
+    discordPresence?.stop();
+    const previous = playerStateMonitor;
+    playerStateMonitor = null;
+    if (previous) await previous.stop();
+    playerTitle?.setPlayer(null);
+    if ((!settings.discordPresence && !settings.playerWindowTitle) || !window || window.isDestroyed()) return;
+    if (settings.discordPresence) discordPresence = new DiscordPresence({ onStatus: () => publish() });
+    const monitor = new PlayerStateMonitor(() => gameFrames(true), (player) => {
+      if (playerStateMonitor !== monitor) return;
+      playerTitle?.setPlayer(settings.playerWindowTitle ? player : null);
+      if (settings.discordPresence) discordPresence.setPlayer(player, true);
+    }, { shareName: settings.discordPresence || settings.playerWindowTitle, polling: settings.discordPresence });
+    playerStateMonitor = monitor;
+    if (settings.discordPresence) discordPresence.start();
+    await monitor.start();
+  });
+  return presenceTask;
 }
 async function runCommand(command, value, menuEvent) {
   switch (command) {
     case 'state': break;
-    case 'home': await game.webContents.loadURL(HOME); break;
-    case 'reload': game.webContents.reload(); break;
+    case 'home': playerStateMonitor?.reset(); await game.webContents.loadURL(HOME); break;
+    case 'reload': playerStateMonitor?.reset(); game.webContents.reload(); break;
     case 'pin': settings.pin = !settings.pin; window.setAlwaysOnTop(settings.pin); break;
     case 'gameOnly': settings.gameOnly = !settings.gameOnly; applyGameOnly(); updateOsapiLayout(); updateAmbientTimer(); break;
     case 'fullscreen': window.setFullScreen(!window.isFullScreen()); break;
@@ -116,7 +166,14 @@ async function runCommand(command, value, menuEvent) {
         detail: 'This signs you out of DMM. It does not delete your settings or cookies in your regular browser.',
       });
       if (response !== 1) break;
+      playerStateMonitor?.reset();
+      discordPresence?.setPlayer(null, false, true);
+      // Stop in-frame requests before clearing authentication, not after.
+      const previous = playerStateMonitor;
+      playerStateMonitor = null;
+      if (previous) await previous.stop();
       await game.webContents.session.clearStorageData({ storages: ['cookies'] });
+      await updatePresence();
       status = 'App cookies deleted. Use Home or Reload to sign in again.';
       break;
     }
@@ -151,6 +208,40 @@ async function runCommand(command, value, menuEvent) {
     case 'probeUnityPointers': return { ...state(), status: await probeUnityPointers() };
     case 'storyDiagnostic': status = await inspectStoryUi(); break;
     case 'storyRuntimeProbe': status = await inspectStoryRuntime(); break;
+    case 'startPlayerApiDiagnostic': status = await startPlayerApiDiagnostic(); break;
+    case 'savePlayerApiDiagnostic': status = await savePlayerApiDiagnostic(); break;
+    case 'discordPresence': {
+      if (!settings.discordPresence) {
+        const { response } = await dialog.showMessageBox(window, {
+          type: 'question', title: 'Discord Rich Presence (stable)', message: 'Share your in-game nickname, level and stamina with Discord?',
+          detail: `Uses Discord desktop and Application ID ${DISCORD_APPLICATION_ID}. Enabling includes nickname sharing, one-minute player refresh and debounced gameplay-triggered updates. Only an observed empty InitGameDataCs request matched to player data is reused; login, purchase and battle requests are never replayed. Extra refreshes are spaced at least 15 seconds apart and respect server backoff. Repeating initialization has not been independently verified to be side-effect-free. Credentials and player values stay in memory, never in settings or diagnostic reports. Discord shows last-read stamina and its age. Navigation, confirmed logout or disabling clears the activity and stops refreshes. Reload after enabling to observe the initial player request.`,
+          buttons: ['Cancel', 'Enable'], defaultId: 0, cancelId: 0, noLink: true,
+        });
+        if (response !== 1) break;
+      }
+      settings.discordPresence = !settings.discordPresence;
+      await updatePresence();
+      status = settings.discordPresence ? 'Discord presence enabled with nickname sharing and automatic refresh. Reload the game to read player data.' : 'Discord presence disabled and cleared; automatic refresh stopped.';
+      break;
+    }
+    case 'playerWindowTitle': {
+      settings.playerWindowTitle = !settings.playerWindowTitle;
+      await updatePresence();
+      status = settings.playerWindowTitle ? 'Local player title enabled. Reload to read player data.' : 'Player title cleared.';
+      break;
+    }
+    case 'discordPreview': {
+      const player = playerStateMonitor?.snapshot();
+      await dialog.showMessageBox(window, {
+        type: 'info', title: 'Discord presence status', message: discordPresence?.status || 'Disabled',
+        detail: `Application ID: ${DISCORD_APPLICATION_ID}\n${player
+          ? `Level: ${player.level ?? 'unavailable'}\nStamina: ${player.stamina ?? 'unavailable or stale'}${player.staminaLastRead ? ` (last read ${player.staminaAgeMinutes}m ago)` : ''}\nNickname: ${settings.discordPresence ? player.nickname || 'waiting for reload' : 'not shared'}`
+          : 'No player state yet. Enable presence and reload the game.'}\nRefresh: ${playerStateMonitor?.refreshState?.status || (settings.discordPresence ? 'Waiting for game reader' : 'Disabled')}\n${settings.discordPresence
+          ? 'Refresh interval: 1 minute, plus debounced refreshes after recognized stage completions, sweeps and stamina-item actions. Stage-start stamina is read directly. Last-read values remain visible if a refresh fails; their age is shown. Rejected requests stop refreshing; temporary errors back off.'
+          : 'Last-read values remain visible until reload, navigation, confirmed logout or disabling.'} Discord activity is resent every minute. No regeneration is estimated.`,
+      });
+      break;
+    }
     case 'downloadAssets': {
       if (assetDownloadController) break;
       assetDownloadTask = downloadGameAssets();
@@ -209,8 +300,14 @@ function showClientMenu(params = {}) {
     { label: settings.speed === 99 ? 'Speed (99×)' : 'Speed',
       submenu: choose('speed', settings.speed === 99 ? 10 : settings.speed, SPEED_OPTIONS, (value) => `${value}×`) },
     { label: 'Screenshot', click: () => runCommand('screenshot').catch((error) => { status = error.message; publish(); }) },
-    { label: 'Story UI diagnostic…', click: () => runCommand('storyDiagnostic').catch((error) => { status = error.message; publish(); }) },
-    { label: 'Story runtime probe…', click: () => runCommand('storyRuntimeProbe').catch((error) => { status = error.message; publish(); }) },
+    { label: 'Show player info in window title (local)', type: 'checkbox', checked: settings.playerWindowTitle,
+      click: () => runCommand('playerWindowTitle').catch(() => { status = 'Could not configure player title'; publish(); }) },
+    { label: 'Discord Rich Presence (stable)', submenu: [
+      { label: 'Enable', type: 'checkbox', checked: settings.discordPresence,
+        click: () => runCommand('discordPresence').catch(() => { status = 'Could not configure Discord presence'; publish(); }) },
+      { label: 'Status / player preview…', click: () => runCommand('discordPreview').catch(() => {}) },
+      { label: discordPresence?.status || 'Disabled', enabled: false },
+    ] },
     { type: 'separator' },
     { label: 'Download game assets…', enabled: !assetDownloadController,
       click: () => runCommand('downloadAssets').catch((error) => { status = error.message; publish(); }) },
@@ -283,16 +380,23 @@ function applyFpsToFrame(processId, routingId) {
   if (frame?.url.startsWith('https://games.mofushippo.com/'))
     frame.executeJavaScript(fpsScript(settings.fps)).catch(() => {});
 }
-function gameFrame() {
-  let found;
+function gameFrames(includePopups = false) {
+  const found = [];
   function visit(frame) {
     if (!frame) return;
-    if (frame.url.startsWith('https://games.mofushippo.com/')) found = frame;
+    if (frame.url.startsWith('https://games.mofushippo.com/')) found.push(frame);
     for (const child of frame.frames) visit(child);
   }
   if (game && !game.webContents.isDestroyed()) visit(game.webContents.mainFrame);
+  if (includePopups && game && !game.webContents.isDestroyed()) {
+    for (const popup of BrowserWindow.getAllWindows()) {
+      if (!popup.webContents.isDestroyed() && popup.webContents.session === game.webContents.session)
+        visit(popup.webContents.mainFrame);
+    }
+  }
   return found;
 }
+function gameFrame() { return gameFrames().at(-1); }
 async function sendUnitySpeed(speed, object = settings.bridgeObject, method = settings.bridgeMethod) {
   const frame = gameFrame();
   if (!frame) return 'Game frame not ready';
@@ -392,6 +496,43 @@ async function analyzeUnityBuild() {
   return bridge
     ? `${bridge.type}.${bridge.method} is ${bridge.static ? 'static' : 'an instance method'}. ${bridge.note}`
     : `Inspected ${report.assets.length} of ${report.assetCount} Unity assets. Review the saved report.`;
+}
+async function startPlayerApiDiagnostic() {
+  if (playerApiDiagnostic?.active) return 'Player API capture already running';
+  const { response } = await dialog.showMessageBox(window, {
+    type: 'question', title: 'Player API capture', message: 'Observe game responses for up to three minutes?',
+    detail: 'Observes game responses without debugger attachment. Extracts schema-mapped level/energy numeric samples and nickname presence only; nickname values, IDs, tokens and raw bodies are not saved. On save, also scans static protobuf declarations (up to 20 seconds per game frame). No Unity calls or memory writes. Use 1× speed. Start capture, reload, wait for the game home screen, open your profile, then save. Note your displayed level and current stamina for comparison. Starting a new capture discards the previous report.',
+    buttons: ['Cancel', 'Start capture'], defaultId: 0, cancelId: 0, noLink: true,
+  });
+  if (response !== 1) return 'Player API capture canceled';
+  if (playerApiDiagnostic?.active) return 'Player API capture already running';
+  const diagnostic = new PlayerApiFrameDiagnostic(() => gameFrames(true), () => {
+    status = 'Player API capture stopped. Save the report from the right-click menu.';
+    publish();
+  });
+  await diagnostic.start();
+  playerApiDiagnostic = diagnostic;
+  return diagnostic.frames.size
+    ? 'Player API observer installed in the game frame. Reload, open your profile, then stop and save.'
+    : 'Player API capture waiting for the game frame. Reload and wait for the game home screen before saving.';
+}
+async function savePlayerApiDiagnostic() {
+  if (!playerApiDiagnostic) throw new Error('Start a player API capture first');
+  const diagnostic = playerApiDiagnostic;
+  const report = await diagnostic.stopAndReport();
+  const file = await dialog.showSaveDialog(window, {
+    defaultPath: 'criste-player-api-report.json', filters: [{ name: 'JSON report', extensions: ['json'] }],
+  });
+  if (file.canceled || !file.filePath) return 'Player API capture stopped. Report is still available to save.';
+  status = 'Reading static protobuf schemas from Unity memory… Allow up to 20 seconds per game frame.';
+  publish();
+  report.protocolSchemas = [];
+  for (const frame of gameFrames(true)) {
+    try { report.protocolSchemas.push(await frame.executeJavaScript(playerProtocolSchemaScript())); }
+    catch { report.protocolSchemas.push({ error: 'Game frame unavailable during schema inspection' }); }
+  }
+  fs.writeFileSync(file.filePath, JSON.stringify(report, null, 2));
+  return `Player API report saved: ${report.responses.length} bodies, ${report.counts.gameRequests} game requests, ${report.counts.webSocketFramesSeen} socket frames. Fields are unverified.`;
 }
 async function downloadGameAssets() {
   const frame = gameFrame();
@@ -686,6 +827,17 @@ function secureWebContents(contents) {
   contents.on('will-navigate', (event, url) => {
     if (!url.startsWith('https://')) event.preventDefault();
   });
+  contents.on('did-start-navigation', (_event, url, inPlace, isMainFrame, processId, routingId) => {
+    if (!inPlace && (isMainFrame || playerStateMonitor?.owner === processId + ':' + routingId ||
+        url.startsWith('https://games.mofushippo.com/'))) playerStateMonitor?.reset();
+  });
+  contents.on('did-frame-finish-load', (_event, _main, processId, routingId) => {
+    playerStateMonitor?.installFrame(webFrameMain.fromId(processId, routingId)).catch(() => {});
+  });
+  contents.on('did-frame-navigate', (_event, _url, _code, _text, _main, processId, routingId) => {
+    playerStateMonitor?.installFrame(webFrameMain.fromId(processId, routingId)).catch(() => {});
+  });
+  contents.on('render-process-gone', () => playerStateMonitor?.reset());
   contents.on('did-create-window', (popup) => secureWebContents(popup.webContents));
 }
 
@@ -693,13 +845,14 @@ function createWindow() {
   window = new BrowserWindow({
     ...settings.bounds,
     minWidth: 760, minHeight: 520,
-    title: 'クリステの遺宝 — Unofficial Desktop Prototype',
+    title: DEFAULT_WINDOW_TITLE,
     icon: APP_ICON,
     backgroundColor: '#181b25',
     show: false,
     autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, sandbox: true, spellcheck: false },
   });
+  playerTitle = attachPlayerWindowTitle(window);
   game = new WebContentsView({
     webPreferences: { partition: 'persist:criste', nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, spellcheck: false, backgroundThrottling: false },
   });
@@ -713,10 +866,18 @@ function createWindow() {
   window.on('leave-full-screen', publish);
   window.on('close', () => {
     clearInterval(ambientTimer);
+    discordPresence?.stop();
+    playerStateMonitor?.stop().catch(() => {});
     if (!window.isMaximized() && !window.isFullScreen()) settings.bounds = window.getBounds();
     save();
   });
   secureWebContents(game.webContents);
+  game.webContents.on('render-process-gone', (_event, details) => {
+    recordProcessExit('game-renderer', details);
+    playerApiDiagnostic?.finish('renderer-exit');
+    status = `Game renderer exited: ${details.reason} (${details.exitCode}). Use Reload to retry.`;
+    publish();
+  });
   game.webContents.on('context-menu', (event, params) => {
     event.preventDefault();
     showClientMenu(params);
@@ -727,9 +888,13 @@ function createWindow() {
     applyFpsToFrame(processId, routingId);
     injectClock(webFrameMain.fromId(processId, routingId));
     const frame = webFrameMain.fromId(processId, routingId);
+    playerApiDiagnostic?.installFrame(frame).catch(() => {});
     if (settings.bridgeEnabled && frame?.url.startsWith('https://games.mofushippo.com/')) {
       setTimeout(() => { if (settings.bridgeEnabled) sendUnitySpeed(settings.speed).catch(() => {}); }, 5000);
     }
+  });
+  game.webContents.on('did-frame-navigate', (_event, _url, _code, _text, _isMainFrame, processId, routingId) => {
+    playerApiDiagnostic?.installFrame(webFrameMain.fromId(processId, routingId)).catch(() => {});
   });
   game.webContents.on('did-navigate', (_event, url) => {
     try { status = new URL(url).hostname; } catch { status = 'Game'; }
@@ -779,6 +944,9 @@ app.whenReady().then(() => {
     return runCommand(command, value);
   });
   createWindow();
+  updatePresence().catch(() => { status = 'Could not start Discord presence'; publish(); });
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 app.on('window-all-closed', () => app.quit());
+app.on('before-quit', () => { discordPresence?.stop(); playerStateMonitor?.stop().catch(() => {}); });
+app.on('child-process-gone', (_event, details) => recordProcessExit(details.type, details));
