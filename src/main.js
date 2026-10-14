@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, WebContentsView, ipcMain, dialog, session, webFrameMain } = require('electron');
+const { app, BrowserWindow, Menu, WebContentsView, ipcMain, dialog, session, webFrameMain, protocol } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { fpsScript } = require('./fps-script');
@@ -22,6 +22,13 @@ const { unityPointerProbeScript } = require('./unity-pointer-probe');
 const { inspectAsset, decodedBytes } = require('./asset-analysis');
 const { extractMetadata, parseMetadata } = require('./il2cpp-metadata');
 const { isDmmGamePage, withRegionCookie, isDmmRegionCookie, syncRegionCookie, removeRegionCookie } = require('./region-cookie');
+const { LANGUAGES, ORIGINAL_LANGUAGE, PATCH_SCHEME, bundleKind, patchesBundle, siblingBundleUrl, patchUrl, originalUrl,
+  patchSceneBundle, patchTableBundle, traditionalConverter, pickCoverage } = require('./game-language');
+const { readBundle, fontCoverage } = require('./unity-bundle');
+
+// The game fetches the bundles a chosen language rewrites through this scheme; Japanese is never redirected.
+protocol.registerSchemesAsPrivileged([{ scheme: PATCH_SCHEME,
+  privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }]);
 
 // Unity's WASM heap is most of the RAM and cannot be shrunk. These only remove
 // extra Chromium processes and unused features.
@@ -39,6 +46,7 @@ const defaults = {
   bridgeEnabled: false, bridgeObject: 'GameManager', bridgeMethod: 'SetTimeScale',
   discordPresence: false,
   playerWindowTitle: true,
+  gameLanguage: ORIGINAL_LANGUAGE,
   bounds: { width: 1100, height: 820 },
 };
 const OBJECT_NAME = /^[\w /-]{1,80}$/;
@@ -99,6 +107,7 @@ function readSettings() {
       bridgeEnabled: saved.bridgeEnabled === true,
       discordPresence: saved.discordPresence === true,
       playerWindowTitle: saved.playerWindowTitle !== false,
+      gameLanguage: Object.hasOwn(LANGUAGES, saved.gameLanguage) ? saved.gameLanguage : ORIGINAL_LANGUAGE,
       bridgeObject: typeof saved.bridgeObject === 'string' && OBJECT_NAME.test(saved.bridgeObject)
         ? saved.bridgeObject : defaults.bridgeObject,
       bridgeMethod: typeof saved.bridgeMethod === 'string' && METHOD_NAME.test(saved.bridgeMethod)
@@ -224,6 +233,22 @@ async function runCommand(command, value, menuEvent) {
       status = settings.discordPresence ? 'Discord presence enabled with nickname sharing and automatic refresh. Reload the game to read player data.' : 'Discord presence disabled and cleared; automatic refresh stopped.';
       break;
     }
+    case 'gameLanguage': {
+      if (!Object.hasOwn(LANGUAGES, value) || value === settings.gameLanguage) break;
+      if (settings.gameLanguage === ORIGINAL_LANGUAGE) {
+        const { response } = await dialog.showMessageBox(window, {
+          type: 'warning', title: 'Game language (experimental)', message: `Switch the game to ${LANGUAGES[value].label}?`,
+          detail: 'The game ships its Chinese source text but only shows Japanese. This changes the startup language setting in the copy of the game data this app loads, then reloads the game. 繁體中文 converts menus and other UI text to Taiwan Traditional Chinese with OpenCC; story dialogue stays in the original Simplified Chinese. Nothing is changed on the server. Modifying the game client may violate the service terms. Choose 日本語 to load the unmodified game again.',
+          buttons: ['Cancel', 'Switch and reload'], defaultId: 0, cancelId: 0, noLink: true,
+        });
+        if (response !== 1) break;
+      }
+      settings.gameLanguage = value;
+      status = `Game language: ${LANGUAGES[value].label}. Reloading…`;
+      playerStateMonitor?.reset();
+      game.webContents.reload();
+      break;
+    }
     case 'playerWindowTitle': {
       settings.playerWindowTitle = !settings.playerWindowTitle;
       await updatePresence();
@@ -294,6 +319,8 @@ function showClientMenu(params = {}) {
     { label: 'Mute', type: 'checkbox', checked: settings.mute, click: () => runCommand('mute') },
     { label: 'DMM region cookie override', type: 'checkbox', checked: settings.regionCookie,
       click: () => runCommand('regionCookie') },
+    { label: 'Game language (experimental)', submenu: choose('gameLanguage', settings.gameLanguage, Object.keys(LANGUAGES),
+      (key) => LANGUAGES[key].label) },
     { label: 'Delete cookies…', click: () => runCommand('deleteCookies').catch((error) => { status = error.message; publish(); }) },
     { label: 'Zoom', submenu: choose('zoom', settings.zoom, ZOOM_OPTIONS, (value) => `${Math.round(value * 100)}%`) },
     { label: 'FPS', submenu: choose('fps', settings.fps, FPS_OPTIONS, (value) => value ? String(value) : 'Native') },
@@ -912,6 +939,60 @@ function createWindow() {
   game.webContents.loadURL(HOME).catch((error) => { status = error.message; publish(); });
 }
 
+let taiwanConverters;
+let gameFonts = null;
+function taiwanText() {
+  // Loaded only when Traditional Chinese is used; the dictionaries are several megabytes.
+  if (!taiwanConverters) {
+    const OpenCC = require('opencc-js');
+    taiwanConverters = { toTaiwan: OpenCC.Converter({ from: 'cn', to: 'twp' }),
+      toJapanese: OpenCC.Converter({ from: 'tw', to: 'jp' }), toSimplified: OpenCC.Converter({ from: 'tw', to: 'cn' }) };
+  }
+  return taiwanConverters;
+}
+async function fontsBeside(tableUrl) {
+  // Converted text must stay drawable by the game's own fonts, which WebGL cannot fall back from.
+  const url = siblingBundleUrl(tableUrl, 'font');
+  try {
+    const response = await assetCache.fetch(url);
+    if (!response.ok) return [];
+    const key = `${url}
+${response.headers.get('etag') || response.headers.get('last-modified') || ''}`;
+    if (gameFonts?.key !== key) {
+      const bundle = readBundle(Buffer.from(await response.arrayBuffer()));
+      gameFonts = { key, fonts: bundle.nodes.flatMap((node) => fontCoverage(node.bytes)) };
+    } else await response.body?.cancel();
+    return gameFonts.fonts;
+  } catch { return []; }
+}
+async function serveBundle(request) {
+  const url = originalUrl(request.url);
+  if (!url) return new Response('Not found', { status: 404 });
+  // No validators: Unity's cached original then fails revalidation and fetches this response.
+  if (request.method === 'HEAD') return new Response(null, { headers: { 'access-control-allow-origin': 'https://games.mofushippo.com' } });
+  // Not redirected by the page, so this reuses the asset cache and the session's own fetch.
+  const response = await assetCache.fetch(url);
+  if (!response.ok) return response;
+  const original = Buffer.from(await response.arrayBuffer());
+  const headers = { 'access-control-allow-origin': 'https://games.mofushippo.com', 'cache-control': 'no-store',
+    'content-type': response.headers.get('content-type') || 'application/octet-stream' };
+  const language = settings.gameLanguage;
+  if (!patchesBundle(language, url)) return new Response(original, { headers });
+  try {
+    let patched;
+    if (bundleKind(url) === 'scene') patched = patchSceneBundle(original, language).bytes;
+    else {
+      const fonts = await fontsBeside(url);
+      patched = patchTableBundle(original, (sample) => traditionalConverter(taiwanText(), pickCoverage(fonts, sample))).bytes;
+    }
+    return new Response(patched, { headers: { ...headers, 'content-length': String(patched.length) } });
+  } catch (error) {
+    // An unrecognized build loads unmodified instead of failing.
+    status = `Language patch unavailable for ${bundleKind(url)} data: ${error.message}`; publish();
+    return new Response(original, { headers });
+  }
+}
+
 app.whenReady().then(() => {
   settings = readSettings();
   // Keep the DMM login session in this app, not in the user's regular browser.
@@ -935,6 +1016,17 @@ app.whenReady().then(() => {
     const name = Object.keys(headers).find((key) => key.toLowerCase() === 'cookie') || 'Cookie';
     headers[name] = withRegionCookie(headers[name]);
     callback({ requestHeaders: headers });
+  });
+  gameSession.protocol.handle(PATCH_SCHEME, (request) => serveBundle(request).catch((error) => {
+    status = `Language patch failed: ${error.message}`; publish();
+    return new Response('Game bundle unavailable', { status: 502 });
+  }));
+  gameSession.webRequest.onBeforeRequest({ urls: ['https://crystal-test1.oss-cn-beijing.aliyuncs.com/*'] }, (details, callback) => {
+    // Only page requests are redirected; the app's own session fetches always reach the server.
+    // Unity revalidates cross-origin cache entries with HEAD, so both methods must reach the patch scheme.
+    if (['GET', 'HEAD'].includes(details.method) && details.webContentsId && patchesBundle(settings.gameLanguage, details.url))
+      callback({ redirectURL: patchUrl(details.url) });
+    else callback({});
   });
   ipcMain.handle('client:command', async (event, command, value) => {
     if (event.sender !== window.webContents && event.sender !== bridgeWindow?.webContents)
