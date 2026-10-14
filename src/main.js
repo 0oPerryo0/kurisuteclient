@@ -17,7 +17,7 @@ const { PlayerApiFrameDiagnostic } = require('./player-api-frame-diagnostic');
 const { playerProtocolSchemaScript } = require('./player-protocol-schema');
 const { PlayerStateMonitor } = require('./player-state-monitor');
 const { DiscordPresence, DISCORD_APPLICATION_ID } = require('./discord-presence');
-const { DEFAULT_WINDOW_TITLE, attachPlayerWindowTitle } = require('./player-window-title');
+const { DEFAULT_WINDOW_TITLE, UPDATE_NOTICE, attachPlayerWindowTitle } = require('./player-window-title');
 const { unityPointerProbeScript } = require('./unity-pointer-probe');
 const { inspectAsset, decodedBytes } = require('./asset-analysis');
 const { extractMetadata, parseMetadata } = require('./il2cpp-metadata');
@@ -69,7 +69,10 @@ let playerStateMonitor;
 let discordPresence;
 let playerTitle;
 let presenceTask = Promise.resolve();
-const update = { checking: false, downloading: false, release: null, message: 'Not checked yet', timers: [] };
+const update = { checking: false, downloading: false, progress: 0, downloaded: null, release: null, message: 'Not checked yet',
+  timers: [], checkedAt: 0 };
+// Player data refreshes often; it triggers an update check at most this often.
+const PLAYER_UPDATE_CHECK_INTERVAL = 10 * 60 * 1000;
 let regionCookieTask = Promise.resolve();
 
 function recordProcessExit(processType, details) {
@@ -90,11 +93,18 @@ function queueRegionCookieUpdate(action) {
   return regionCookieTask;
 }
 
+function showUpdateInTitle() {
+  playerTitle?.setUpdateNotice(update.downloading ? `Downloading update ${update.progress}%`
+    : update.release && update.downloaded === update.release.version ? 'Update downloaded'
+      : update.release ? UPDATE_NOTICE : null);
+}
 async function checkForUpdates(manual = false) {
   if (update.checking) return;
   update.checking = true;
+  update.checkedAt = Date.now();
   try {
     update.release = await checkLatest(net.fetch, app.getVersion());
+    showUpdateInTitle();
     update.message = update.release ? `Version ${update.release.version} is available` : `Up to date (${app.getVersion()})`;
     if (update.release || manual) { status = update.release ? `${update.message}. Right-click → Updates to download it.` : update.message; publish(); }
   } catch (error) {
@@ -112,14 +122,20 @@ async function downloadUpdate() {
   if (!release || update.downloading) return;
   if (!release.asset) { await shell.openExternal(release.page); return; }
   update.downloading = true;
+  update.progress = 0;
+  showUpdateInTitle();
   try {
     // A portable build runs from a temporary folder; save beside the exe the user started.
     const directory = process.env.PORTABLE_EXECUTABLE_DIR || app.getPath('downloads');
     let shown = -1;
     const file = await downloadAsset(net.fetch, release.asset, directory, (progress) => {
       const percent = Math.floor(progress * 100);
+      if (percent !== update.progress) { update.progress = percent; showUpdateInTitle(); }
       if (percent >= shown + 5) { shown = percent; status = `Downloading ${release.version}… ${percent}%`; publish(); }
     });
+    update.downloaded = release.version;
+    update.downloading = false;
+    showUpdateInTitle();
     status = `Downloaded ${path.basename(file)}`; publish();
     const { response } = await dialog.showMessageBox(window, {
       type: 'info', title: 'Update downloaded', message: `CristeDesktop ${release.version} is ready.`,
@@ -132,7 +148,7 @@ async function downloadUpdate() {
       if (error) throw new Error(error);
       app.quit();
     }
-  } finally { update.downloading = false; }
+  } finally { update.downloading = false; showUpdateInTitle(); }
 }
 function settingsPath() { return path.join(app.getPath('userData'), 'settings.json'); }
 function save() {
@@ -188,6 +204,7 @@ function updatePresence() {
       if (playerStateMonitor !== monitor) return;
       playerTitle?.setPlayer(settings.playerWindowTitle ? player : null);
       if (settings.discordPresence) discordPresence.setPlayer(player, true);
+      if (player && settings.updateCheck && Date.now() - update.checkedAt >= PLAYER_UPDATE_CHECK_INTERVAL) checkForUpdates();
     }, { shareName: settings.discordPresence || settings.playerWindowTitle, polling: settings.discordPresence });
     playerStateMonitor = monitor;
     if (settings.discordPresence) discordPresence.start();

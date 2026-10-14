@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
-const { DEFAULT_WINDOW_TITLE, playerWindowTitle, attachPlayerWindowTitle } = require('../src/player-window-title');
+const { DEFAULT_WINDOW_TITLE, UPDATE_NOTICE, playerWindowTitle, attachPlayerWindowTitle } = require('../src/player-window-title');
 
 test('local title preserves the original title and formats only known player values', () => {
   assert.equal(playerWindowTitle('Original', null), 'Original');
@@ -32,8 +32,20 @@ test('title controller survives shell title updates and restores the original on
   window.webContents.emit('page-title-updated', { preventDefault() { prevented = true; } }, 'Original');
   assert.equal(prevented, true);
   assert.equal(window.title, 'Original | PRIVATE_NAME Level: 42 Stam: 120');
+  controller.setUpdateNotice(UPDATE_NOTICE);
+  assert.equal(window.title, 'Original | PRIVATE_NAME Level: 42 Stam: 120 | New update is available');
   controller.setPlayer(null);
+  assert.equal(window.title, 'Original | New update is available', 'The notice does not depend on player data');
+  controller.setUpdateNotice(null);
   assert.equal(window.title, 'Original');
   window.destroyed = true;
   assert.doesNotThrow(() => controller.setPlayer(null));
+});
+
+test('update notice is appended with the same | separator', () => {
+  assert.equal(UPDATE_NOTICE, 'New update is available');
+  assert.equal(playerWindowTitle('Original', null, UPDATE_NOTICE), 'Original | New update is available');
+  assert.equal(playerWindowTitle('Original', null, 'Downloading update 42%'), 'Original | Downloading update 42%');
+  assert.equal(playerWindowTitle('Original', { nickname: 'Perry', level: 96, stamina: 279, staminaLastRead: true, staminaAgeMinutes: 3 }, UPDATE_NOTICE),
+    'Original | Perry Level: 96 Stam: 279 (last read 3m ago) | New update is available');
 });

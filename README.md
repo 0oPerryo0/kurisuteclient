@@ -35,7 +35,7 @@ The change is made only to the copy of the game data this app loads; nothing on 
 
 ## Updates
 
-The app checks this repository's GitHub releases at startup and every 6 hours (right-click → **Updates**; can be turned off). When a newer version exists, **Download** saves the new exe next to the current one after checking its size and checksum, and can start it for you.
+The app checks this repository's GitHub releases at startup, every 6 hours, and when your player data loads (right-click → **Updates**; can be turned off). If a newer version exists, the window title ends with `| New update is available`. When a newer version exists, **Download** saves the new exe next to the current one after checking its size and checksum, and can start it for you.
 
 ## Building from source
 

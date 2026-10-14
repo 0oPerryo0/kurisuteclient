@@ -3,6 +3,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const vm = require('node:vm');
 const { createRequire } = require('node:module');
@@ -10,7 +11,9 @@ const mainPath = path.join(__dirname, '..', 'src', 'main.js');
 const localRequire = createRequire(mainPath);
 
 function fixture(saved) {
-  const monitors = [], clients = [], dialogs = [], titlePlayers = [], writes = [];
+  const monitors = [], clients = [], dialogs = [], titlePlayers = [], writes = [], titleUpdates = [], releaseChecks = [];
+  let latestRelease = null, assetBytes = Buffer.alloc(0);
+  const env = {};
   let menu, response = 1;
   class Monitor {
     constructor(getFrames, onState, options) {
@@ -29,12 +32,21 @@ function fixture(saved) {
   }
   const electron = {
     app: { commandLine: { appendSwitch() {} }, whenReady: () => ({ then() {} }), on() {},
-      getPath: () => 'D:\\isolated-client-fixture' },
+      getPath: () => 'D:\\isolated-client-fixture', getVersion: () => '0.0.7' },
+    // GitHub's latest-release API, answered locally.
+    net: { async fetch(url) {
+      if (!url.startsWith('https://api.github.com/')) {
+        return { ok: true, status: 200, body: (async function* () { for (let i = 0; i < assetBytes.length; i += 4) yield assetBytes.subarray(i, i + 4); })() };
+      }
+      releaseChecks.push(url);
+      return { ok: !!latestRelease, status: latestRelease ? 200 : 404, json: async () => latestRelease }; } },
+    shell: { showItemInFolder() {}, async openPath() { return ''; }, async openExternal() {} },
     Menu: { buildFromTemplate(template) { menu = template; return { popup() {} }; } },
     protocol: { registerSchemesAsPrivileged() {} },
     dialog: { async showMessageBox(_window, options) { dialogs.push(options); return { response }; } },
   };
   const context = vm.createContext({ __dirname: path.dirname(mainPath), console, setTimeout, clearTimeout,
+    process: { env }, Buffer,
     setInterval, clearInterval, module: { exports: {} }, require(id) {
       if (id === 'electron') return electron;
       if (id === 'node:fs') return {
@@ -56,9 +68,12 @@ function fixture(saved) {
   const controls = context.controls;
   const reloads = [];
   controls.initialize({ isDestroyed: () => false, isFullScreen: () => false, webContents: { send() {} } },
-    { setPlayer(value) { titlePlayers.push(value); } }, { webContents: { reload() { reloads.push(true); } } });
-  return { controls, monitors, clients, dialogs, titlePlayers, writes, reloads,
-    menu() { controls.showMenu(); return menu; }, setResponse(value) { response = value; } };
+    { setPlayer(value) { titlePlayers.push(value); }, setUpdateNotice(value) { titleUpdates.push(value); } },
+    { webContents: { reload() { reloads.push(true); } } });
+  return { controls, monitors, clients, dialogs, titlePlayers, writes, reloads, titleUpdates, releaseChecks,
+    menu() { controls.showMenu(); return menu; }, setResponse(value) { response = value; },
+    setLatestRelease(value) { latestRelease = value; }, setAsset(bytes) { assetBytes = bytes; },
+    useDownloadFolder() { return (env.PORTABLE_EXECUTABLE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'criste-client-update-'))); } };
 }
 
 test('client menu hides diagnostics and separate nickname/refresh switches while labelling presence stable', () => {
@@ -166,4 +181,57 @@ test('saved game language is validated', () => {
   assert.equal(fixture({ gameLanguage: 'zh' }).controls.state().gameLanguage, 'zh');
   assert.equal(fixture({ gameLanguage: 'constructor' }).controls.state().gameLanguage, 'ja');
   assert.equal(fixture({ gameLanguage: 'en' }).controls.state().gameLanguage, 'ja', 'English is no longer offered');
+});
+
+test('obtaining player data checks for updates and marks the title, at most every 10 minutes', async () => {
+  const f = fixture({ playerWindowTitle: true });
+  f.setLatestRelease({ tag_name: '0.0.8', draft: false, prerelease: false, assets: [] });
+  await f.controls.updatePresence();
+  f.monitors[0].emitPlayer({ nickname: 'Perry', level: 96, stamina: 279 });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(f.releaseChecks.length, 1);
+  assert.equal(f.titleUpdates.at(-1), 'New update is available');
+  assert.equal(f.menu().find(item => item.label === 'Updates (0.0.8 available)').submenu[0].label, 'Version 0.0.8 is available');
+  f.monitors[0].emitPlayer({ nickname: 'Perry', level: 96, stamina: 280 });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(f.releaseChecks.length, 1, 'Frequent player refreshes do not re-query GitHub');
+});
+
+test('player data does not check for updates when automatic checks are off', async () => {
+  const f = fixture({ playerWindowTitle: true, updateCheck: false });
+  await f.controls.updatePresence();
+  f.monitors[0].emitPlayer({ nickname: 'Perry', level: 96, stamina: 279 });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(f.releaseChecks.length, 0);
+});
+
+test('downloading an update shows its progress in the title instead of the update notice', async () => {
+  const f = fixture({ playerWindowTitle: true });
+  const downloads = f.useDownloadFolder();
+  try {
+    const exe = Buffer.alloc(16, 1);
+    f.setAsset(exe);
+    f.setLatestRelease({ tag_name: '0.0.8', draft: false, prerelease: false, assets: [{ name: 'CristeDesktop-0.0.8.exe',
+      browser_download_url: 'https://github.com/0oPerryo0/kurisuteclient/releases/download/0.0.8/CristeDesktop-0.0.8.exe', size: exe.length }] });
+    await f.controls.command('checkUpdates');
+    f.setResponse(0);
+    await f.controls.command('downloadUpdate');
+    assert.deepEqual(f.titleUpdates.filter((value, index, all) => value !== all[index - 1]), ['New update is available',
+      'Downloading update 0%', 'Downloading update 25%', 'Downloading update 50%', 'Downloading update 75%',
+      'Downloading update 100%', 'Update downloaded']);
+    assert.deepEqual(fs.readFileSync(path.join(downloads, 'CristeDesktop-0.0.8.exe')), exe);
+  } finally { fs.rmSync(downloads, { recursive: true, force: true }); }
+});
+
+test('a failed update download returns the title to the update notice', async () => {
+  const f = fixture({ playerWindowTitle: true });
+  const downloads = f.useDownloadFolder();
+  try {
+    f.setAsset(Buffer.alloc(4));
+    f.setLatestRelease({ tag_name: '0.0.8', draft: false, prerelease: false, assets: [{ name: 'CristeDesktop-0.0.8.exe',
+      browser_download_url: 'https://github.com/0oPerryo0/kurisuteclient/releases/download/0.0.8/CristeDesktop-0.0.8.exe', size: 16 }] });
+    await f.controls.command('checkUpdates');
+    await assert.rejects(f.controls.command('downloadUpdate'), /incomplete/);
+    assert.equal(f.titleUpdates.at(-1), 'New update is available');
+  } finally { fs.rmSync(downloads, { recursive: true, force: true }); }
 });
