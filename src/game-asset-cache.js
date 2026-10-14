@@ -6,11 +6,13 @@ const { pipeline } = require('node:stream/promises');
 
 const MAX_FILE = 256 * 1024 * 1024;
 const MAX_CACHE = 2 * 1024 * 1024 * 1024;
+// The game page and engine come from mofushippo; YooAsset bundles come from the game's OSS bucket.
+const GAME_ASSET_HOSTS = ['games.mofushippo.com', 'crystal-test1.oss-cn-beijing.aliyuncs.com'];
 
 function isGameAsset(url) {
   try {
     const parsed = new URL(url);
-    if (parsed.protocol !== 'https:' || parsed.hostname !== 'games.mofushippo.com' ||
+    if (parsed.protocol !== 'https:' || !GAME_ASSET_HOSTS.includes(parsed.hostname) ||
         parsed.username || parsed.password || parsed.hash) return false;
     for (const key of parsed.searchParams.keys()) if (!/^(?:v|version|hash)$/i.test(key)) return false;
     return /\.(?:bundle|unityweb|wasm|data|bytes|br|gz)$/i.test(parsed.pathname) ||
@@ -160,4 +162,4 @@ function manifestAssets(bytes, manifestUrl) {
   }).filter(Boolean))].slice(0, 5000);
 }
 
-module.exports = { GameAssetCache, isGameAsset, cachePolicy, manifestAssets };
+module.exports = { GameAssetCache, GAME_ASSET_HOSTS, isGameAsset, cachePolicy, manifestAssets };

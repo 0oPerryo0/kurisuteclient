@@ -8,8 +8,10 @@ const { GameAssetCache, isGameAsset, cachePolicy, manifestAssets } = require('..
 test('only approved static resources are cache eligible', () => {
   assert.equal(isGameAsset('https://games.mofushippo.com/CryWebAws/Build/game.data.unityweb'), true);
   assert.equal(isGameAsset('https://games.mofushippo.com/assets/a.bundle?v=2'), true);
+  assert.equal(isGameAsset('https://crystal-test1.oss-cn-beijing.aliyuncs.com/resouce-dev-aws/defaultpackage_unityshaders.bundle'), true);
   for (const url of ['https://accounts.dmm.co.jp/login', 'https://games.mofushippo.com/api/player',
     'https://games.mofushippo.com/a.bundle?token=secret', 'https://evil.games.mofushippo.com/a.bundle',
+    'https://other-bucket.oss-cn-beijing.aliyuncs.com/a.bundle',
     'http://games.mofushippo.com/a.bundle']) assert.equal(isGameAsset(url), false, url);
 });
 
@@ -77,4 +79,11 @@ test('manifest discovery extracts static paths only and deduplicates', () => {
     'https://games.mofushippo.com/assets/DefaultPackage_123.bytes');
   assert.deepEqual(list, ['https://games.mofushippo.com/assets/a.bundle',
     'https://games.mofushippo.com/assets/sub/b.bundle']);
+});
+
+test('manifest discovery resolves bundles next to a manifest on the asset bucket', () => {
+  const base = 'https://crystal-test1.oss-cn-beijing.aliyuncs.com/resouce-dev-aws/';
+  const list = manifestAssets(Buffer.from('\0defaultpackage_assets_localresources_scene.bundle\0'),
+    base + 'DefaultPackage_2026-09-30-830.bytes');
+  assert.deepEqual(list, [base + 'defaultpackage_assets_localresources_scene.bundle']);
 });

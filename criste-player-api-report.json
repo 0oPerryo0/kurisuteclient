@@ -1,0 +1,2740 @@
+{
+  "diagnosticVersion": 8,
+  "captureMode": "game-frame-observer",
+  "startedAt": "2026-10-01T20:20:42.137Z",
+  "finishedAt": "2026-10-01T20:21:19.140Z",
+  "stoppedReason": "manual",
+  "note": "Passive browser API wrappers, without debugger attachment, request replay or Unity memory writes. Only game-origin HTTP bodies are summarized. Reviewed HotUpdate.dll protobuf paths for InitGameDataSc and UpdateEnergySC expose only player level/energy numeric samples and nickname presence. All other protobuf scalar values and byte/string contents are omitted. Account-name values, tokens, IDs, query strings and raw bodies are never saved. No encryption keys are read or guessed. Mapping remains unverified against the game display; no Discord presence is sent.",
+  "gameFramesAttached": 2,
+  "installedHooks": [
+    {
+      "fetch": true,
+      "webSocket": true,
+      "xhr": true
+    },
+    {
+      "fetch": true,
+      "webSocket": true,
+      "xhr": true
+    }
+  ],
+  "installedObserverVersions": [
+    8
+  ],
+  "counts": {
+    "gameRequests": 35,
+    "requestsSeen": 96,
+    "webSocketFramesSeen": 0,
+    "frameReadFailures": 0,
+    "binaryResponses": 0,
+    "bodyReadsSkippedBusy": 1,
+    "bodyUnavailable": 0,
+    "captureErrors": 0,
+    "playerResponses": 1,
+    "skippedLarge": 0,
+    "wireResponses": 8
+  },
+  "responses": [
+    {
+      "candidates": [],
+      "decoder": "json",
+      "endpoint": "https://games.mofushippo.com/<redacted>/<redacted>",
+      "fields": [
+        {
+          "path": "$.unityUrl",
+          "type": "string"
+        },
+        {
+          "path": "$.loginUrl",
+          "type": "string"
+        },
+        {
+          "path": "$.variant",
+          "type": "string"
+        },
+        {
+          "path": "$.gaGameKey",
+          "type": "string"
+        },
+        {
+          "path": "$.unityUrlGeneral",
+          "type": "string"
+        },
+        {
+          "path": "$.unityUrlR18",
+          "type": "string"
+        },
+        {
+          "path": "$.status",
+          "type": "string"
+        }
+      ],
+      "format": "json",
+      "mimeType": "application/json",
+      "note": "Candidate names only; unit levels, other players and currencies may match. Validate against the in-game profile and stamina display.",
+      "status": 200,
+      "type": "Fetch"
+    },
+    {
+      "candidates": [],
+      "decoder": "game-wire",
+      "endpoint": "https://games.mofushippo.com/game",
+      "fields": [],
+      "format": "opaque-non-json",
+      "mimeType": "text/plain",
+      "status": 200,
+      "type": "Fetch",
+      "wire": {
+        "byteLength": 152,
+        "characterFormat": "utf8",
+        "decodedByteLength": 152,
+        "decodingSteps": [],
+        "protobufCandidate": {
+          "fields": [
+            {
+              "byteLength": 1,
+              "number": 1,
+              "wireType": 0
+            },
+            {
+              "byteLength": 12,
+              "number": 2,
+              "wireType": 2
+            },
+            {
+              "byteLength": 24,
+              "number": 3,
+              "wireType": 2
+            },
+            {
+              "byteLength": 32,
+              "number": 4,
+              "wireType": 2
+            },
+            {
+              "byteLength": 74,
+              "number": 11,
+              "wireType": 2
+            }
+          ],
+          "note": "Possible protobuf wire layout only; not proof of this codec. Field meanings and values are unknown."
+        }
+      }
+    },
+    {
+      "candidates": [],
+      "decoder": "game-wire",
+      "endpoint": "https://games.mofushippo.com/game",
+      "fields": [],
+      "format": "opaque-non-json",
+      "mimeType": "text/plain",
+      "status": 200,
+      "type": "Fetch",
+      "wire": {
+        "byteLength": 11,
+        "characterFormat": "binary",
+        "decodedByteLength": 11,
+        "decodingSteps": [],
+        "protobufCandidate": {
+          "fields": [
+            {
+              "byteLength": 1,
+              "number": 1,
+              "wireType": 0
+            },
+            {
+              "byteLength": 7,
+              "number": 15,
+              "wireType": 2
+            }
+          ],
+          "note": "Possible protobuf wire layout only; not proof of this codec. Field meanings and values are unknown."
+        }
+      }
+    },
+    {
+      "candidates": [
+        {
+          "category": "level",
+          "fieldNumber": 2,
+          "path": "$.InitGameDataSc.Level",
+          "present": true,
+          "sample": 96,
+          "type": "int32"
+        },
+        {
+          "category": "accountName",
+          "fieldNumber": 4,
+          "path": "$.InitGameDataSc.Nickname",
+          "present": true,
+          "type": "string",
+          "valueOmitted": true
+        },
+        {
+          "category": "stamina",
+          "fieldNumber": 7,
+          "path": "$.InitGameDataSc.Energy",
+          "present": true,
+          "sample": 279,
+          "type": "int32"
+        }
+      ],
+      "decoder": "game-wire",
+      "endpoint": "https://games.mofushippo.com/game",
+      "fields": [
+        {
+          "fieldNumber": 2,
+          "path": "$.InitGameDataSc.Level",
+          "present": true,
+          "type": "int32"
+        },
+        {
+          "fieldNumber": 4,
+          "path": "$.InitGameDataSc.Nickname",
+          "present": true,
+          "type": "string"
+        },
+        {
+          "fieldNumber": 7,
+          "path": "$.InitGameDataSc.Energy",
+          "present": true,
+          "type": "int32"
+        }
+      ],
+      "format": "protobuf-player-candidate",
+      "mimeType": "text/plain",
+      "note": "Only schema-mapped player level, nickname presence and energy. Nickname values, IDs, tokens and other fields are not decoded. Missing fields are not sampled or assumed zero. Compare numeric samples with the game display; Energy as stamina is not yet visually verified.",
+      "protobufPlayer": {
+        "envelopeField": 101,
+        "mappingVersion": 1,
+        "message": "InitGameDataSCMsg",
+        "schemaSource": "Reviewed HotUpdate.dll declarations in diagnostic version 7",
+        "verifiedAgainstGameDisplay": false
+      },
+      "status": 200,
+      "type": "Fetch",
+      "wire": {
+        "byteLength": 27443,
+        "characterFormat": "binary",
+        "decodedByteLength": 27443,
+        "decodingSteps": []
+      }
+    },
+    {
+      "candidates": [],
+      "decoder": "game-wire",
+      "endpoint": "https://games.mofushippo.com/game",
+      "fields": [],
+      "format": "opaque-non-json",
+      "mimeType": "text/plain",
+      "status": 200,
+      "type": "Fetch",
+      "wire": {
+        "byteLength": 90,
+        "characterFormat": "binary",
+        "decodedByteLength": 90,
+        "decodingSteps": [],
+        "protobufCandidate": {
+          "fields": [
+            {
+              "byteLength": 2,
+              "number": 1,
+              "wireType": 0
+            },
+            {
+              "byteLength": 84,
+              "number": 1050,
+              "wireType": 2
+            }
+          ],
+          "note": "Possible protobuf wire layout only; not proof of this codec. Field meanings and values are unknown."
+        }
+      }
+    },
+    {
+      "candidates": [],
+      "decoder": "game-wire",
+      "endpoint": "https://games.mofushippo.com/game",
+      "fields": [],
+      "format": "opaque-non-json",
+      "mimeType": "text/plain",
+      "status": 200,
+      "type": "Fetch",
+      "wire": {
+        "byteLength": 468,
+        "characterFormat": "binary",
+        "decodedByteLength": 468,
+        "decodingSteps": [],
+        "protobufCandidate": {
+          "fields": [
+            {
+              "byteLength": 2,
+              "number": 1,
+              "wireType": 0
+            },
+            {
+              "byteLength": 461,
+              "number": 1060,
+              "wireType": 2
+            }
+          ],
+          "note": "Possible protobuf wire layout only; not proof of this codec. Field meanings and values are unknown."
+        }
+      }
+    },
+    {
+      "candidates": [],
+      "decoder": "game-wire",
+      "endpoint": "https://games.mofushippo.com/game",
+      "fields": [],
+      "format": "opaque-non-json",
+      "mimeType": "text/plain",
+      "status": 200,
+      "type": "Fetch",
+      "wire": {
+        "byteLength": 7756,
+        "characterFormat": "binary",
+        "decodedByteLength": 7756,
+        "decodingSteps": [],
+        "protobufCandidate": {
+          "fields": [
+            {
+              "byteLength": 2,
+              "number": 1,
+              "wireType": 0
+            },
+            {
+              "byteLength": 7749,
+              "number": 1062,
+              "wireType": 2
+            }
+          ],
+          "note": "Possible protobuf wire layout only; not proof of this codec. Field meanings and values are unknown."
+        }
+      }
+    },
+    {
+      "candidates": [],
+      "decoder": "game-wire",
+      "endpoint": "https://games.mofushippo.com/game",
+      "fields": [],
+      "format": "opaque-non-json",
+      "mimeType": "text/plain",
+      "status": 200,
+      "type": "Fetch",
+      "wire": {
+        "byteLength": 431,
+        "characterFormat": "binary",
+        "decodedByteLength": 431,
+        "decodingSteps": [],
+        "protobufCandidate": {
+          "fields": [
+            {
+              "byteLength": 2,
+              "number": 1,
+              "wireType": 0
+            },
+            {
+              "byteLength": 424,
+              "number": 1024,
+              "wireType": 2
+            }
+          ],
+          "note": "Possible protobuf wire layout only; not proof of this codec. Field meanings and values are unknown."
+        }
+      }
+    },
+    {
+      "candidates": [],
+      "decoder": "game-wire",
+      "endpoint": "https://games.mofushippo.com/game",
+      "fields": [],
+      "format": "opaque-non-json",
+      "mimeType": "text/plain",
+      "status": 200,
+      "type": "Fetch",
+      "wire": {
+        "byteLength": 1343,
+        "characterFormat": "binary",
+        "decodedByteLength": 1343,
+        "decodingSteps": [],
+        "protobufCandidate": {
+          "fields": [
+            {
+              "byteLength": 2,
+              "number": 1,
+              "wireType": 0
+            },
+            {
+              "byteLength": 1336,
+              "number": 1064,
+              "wireType": 2
+            }
+          ],
+          "note": "Possible protobuf wire layout only; not proof of this codec. Field meanings and values are unknown."
+        }
+      }
+    }
+  ],
+  "observedApiEndpoints": [
+    {
+      "decoder": "metadata-only",
+      "endpoint": "https://api.gameanalytics.com/v2/<redacted>/<redacted>",
+      "gameScoped": true,
+      "mimeType": "application/json",
+      "status": 200,
+      "type": "XHR",
+      "count": 4
+    },
+    {
+      "decoder": "metadata-only",
+      "endpoint": "https://api.gameanalytics.com/<redacted>/v1/<redacted>",
+      "gameScoped": true,
+      "mimeType": "application/json",
+      "status": 200,
+      "type": "XHR",
+      "count": 1
+    },
+    {
+      "decoder": "metadata-only",
+      "endpoint": "https://crystal-test1.oss-cn-beijing.aliyuncs.com/<redacted>/<redacted>",
+      "gameScoped": true,
+      "mimeType": "application/octet-stream",
+      "status": 200,
+      "type": "Fetch",
+      "count": 2
+    },
+    {
+      "decoder": "json",
+      "endpoint": "https://games.mofushippo.com/<redacted>/<redacted>",
+      "gameScoped": true,
+      "mimeType": "application/json",
+      "status": 200,
+      "type": "Fetch",
+      "count": 1
+    },
+    {
+      "decoder": "metadata-only",
+      "endpoint": "https://api.store.games.dmm.com/<redacted>/<redacted>/<redacted>",
+      "gameScoped": true,
+      "mimeType": "unknown",
+      "status": 200,
+      "type": "Fetch",
+      "count": 13
+    },
+    {
+      "decoder": "metadata-only",
+      "endpoint": "https://bs.recibo.games.dmm.co.jp/<redacted>/<redacted>/<redacted>",
+      "gameScoped": true,
+      "mimeType": "application/json",
+      "status": 200,
+      "type": "Fetch",
+      "count": 1
+    },
+    {
+      "decoder": "metadata-only",
+      "endpoint": "https://bs.recibo.games.dmm.co.jp/v2/<redacted>/<redacted>/<redacted>",
+      "gameScoped": true,
+      "mimeType": "application/json",
+      "status": 200,
+      "type": "Fetch",
+      "count": 1
+    },
+    {
+      "decoder": "metadata-only",
+      "endpoint": "https://bs.recibo.games.dmm.co.jp/v1/<redacted>/<redacted>",
+      "gameScoped": true,
+      "mimeType": "application/json",
+      "status": 200,
+      "type": "Fetch",
+      "count": 1
+    },
+    {
+      "decoder": "metadata-only",
+      "endpoint": "https://bs.recibo.games.dmm.co.jp/v1/<redacted>",
+      "gameScoped": true,
+      "mimeType": "application/json",
+      "status": 200,
+      "type": "Fetch",
+      "count": 2
+    },
+    {
+      "decoder": "game-wire",
+      "endpoint": "https://games.mofushippo.com/game",
+      "gameScoped": true,
+      "mimeType": "text/plain",
+      "status": 200,
+      "type": "Fetch",
+      "count": 9
+    }
+  ],
+  "webSocketTransports": [],
+  "protocolSchemas": [
+    {
+      "assemblies": [
+        {
+          "generatedTypeCount": 156,
+          "moduleName": "HotUpdate.dll",
+          "note": "Field numbers are read from managed metadata Constant rows, and types from field signatures. No runtime object values or methods are read or called. Matching message names still needs verification.",
+          "protocolTypes": [
+            {
+              "fields": [
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "MessageType"
+                  },
+                  "name": "MsgId",
+                  "number": 1,
+                  "valueType": "message"
+                },
+                {
+                  "name": "UserId",
+                  "number": 2,
+                  "valueType": "string"
+                },
+                {
+                  "name": "PlayerId",
+                  "number": 3,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Token",
+                  "number": 4,
+                  "valueType": "string"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "ErrorCode"
+                  },
+                  "name": "Code",
+                  "number": 5,
+                  "valueType": "message"
+                },
+                {
+                  "name": "LoginCs",
+                  "number": 10
+                },
+                {
+                  "name": "LoginSc",
+                  "number": 11
+                },
+                {
+                  "name": "RegisterCs",
+                  "number": 12
+                },
+                {
+                  "name": "RegisterSc",
+                  "number": 13
+                },
+                {
+                  "name": "LoginGameCs",
+                  "number": 14
+                },
+                {
+                  "name": "LoginGameSc",
+                  "number": 15
+                },
+                {
+                  "name": "HeartbeatCs",
+                  "number": 16
+                },
+                {
+                  "name": "HeartbeatSc",
+                  "number": 17
+                },
+                {
+                  "name": "InitGameDataCs",
+                  "number": 100
+                },
+                {
+                  "name": "InitGameDataSc",
+                  "number": 101
+                },
+                {
+                  "name": "GiftCodeCs",
+                  "number": 102
+                },
+                {
+                  "name": "GiftCodeSc",
+                  "number": 103
+                },
+                {
+                  "name": "GuideCs",
+                  "number": 104
+                },
+                {
+                  "name": "GuideSc",
+                  "number": 105
+                },
+                {
+                  "name": "SettingCs",
+                  "number": 106
+                },
+                {
+                  "name": "SettingSc",
+                  "number": 107
+                },
+                {
+                  "name": "SortTypeSettingCs",
+                  "number": 108
+                },
+                {
+                  "name": "SortTypeSettingSc",
+                  "number": 109
+                },
+                {
+                  "name": "RoleStrengthenCs",
+                  "number": 1001
+                },
+                {
+                  "name": "RoleStrengthenSc",
+                  "number": 1002
+                },
+                {
+                  "name": "RoleDebrisCs",
+                  "number": 1003
+                },
+                {
+                  "name": "RoleDebrisSc",
+                  "number": 1004
+                },
+                {
+                  "name": "RoleKizunaCs",
+                  "number": 1005
+                },
+                {
+                  "name": "RoleKizunaSc",
+                  "number": 1006
+                },
+                {
+                  "name": "EquipStrengthenCs",
+                  "number": 1007
+                },
+                {
+                  "name": "EquipStrengthenSc",
+                  "number": 1008
+                },
+                {
+                  "name": "ModifyProfileRoleCs",
+                  "number": 1009
+                },
+                {
+                  "name": "ModifyProfileRoleSc",
+                  "number": 1010
+                },
+                {
+                  "name": "SkillStrengthenCs",
+                  "number": 1011
+                },
+                {
+                  "name": "SkillStrengthenSc",
+                  "number": 1012
+                },
+                {
+                  "name": "ModifyNameCs",
+                  "number": 1013
+                },
+                {
+                  "name": "ModifyNameSc",
+                  "number": 1014
+                },
+                {
+                  "name": "ModifyProfileCs",
+                  "number": 1015
+                },
+                {
+                  "name": "ModifyProfileSc",
+                  "number": 1016
+                },
+                {
+                  "name": "TeamRoleUpdateCS",
+                  "number": 1017
+                },
+                {
+                  "name": "TeamRoleUpdateSC",
+                  "number": 1018
+                },
+                {
+                  "name": "UseItemCS",
+                  "number": 1019
+                },
+                {
+                  "name": "UseItemSC",
+                  "number": 1020
+                },
+                {
+                  "name": "UpdateEnergyCS",
+                  "number": 1021
+                },
+                {
+                  "name": "UpdateEnergySC",
+                  "number": 1022
+                },
+                {
+                  "name": "QuestInfoCS",
+                  "number": 1023
+                },
+                {
+                  "name": "QuestInfoSC",
+                  "number": 1024
+                },
+                {
+                  "name": "QuestReceiveRewardCS",
+                  "number": 1025
+                },
+                {
+                  "name": "QuestReceiveRewardSC",
+                  "number": 1026
+                },
+                {
+                  "name": "MonthCardInfoCs",
+                  "number": 1027
+                },
+                {
+                  "name": "MonthCardInfoSc",
+                  "number": 1028
+                },
+                {
+                  "name": "MonthCardReceiveRewardCs",
+                  "number": 1029
+                },
+                {
+                  "name": "MonthCardReceiveRewardSc",
+                  "number": 1030
+                },
+                {
+                  "name": "MonthCardBuyCs",
+                  "number": 1031
+                },
+                {
+                  "name": "MonthCardBuySc",
+                  "number": 1032
+                },
+                {
+                  "name": "DailyLoginCs",
+                  "number": 1033
+                },
+                {
+                  "name": "DailyLoginSc",
+                  "number": 1034
+                },
+                {
+                  "name": "DailyLoginReceiveRewardCs",
+                  "number": 1035
+                },
+                {
+                  "name": "DailyLoginReceiveRewardSc",
+                  "number": 1036
+                },
+                {
+                  "name": "PlatformCheckCs",
+                  "number": 1037
+                },
+                {
+                  "name": "PlatformCheckSc",
+                  "number": 1038
+                },
+                {
+                  "name": "PlatformCheckReceiveRewardCs",
+                  "number": 1039
+                },
+                {
+                  "name": "PlatformCheckReceiveRewardSc",
+                  "number": 1040
+                },
+                {
+                  "name": "RoleShowCs",
+                  "number": 1041
+                },
+                {
+                  "name": "RoleShowSc",
+                  "number": 1042
+                },
+                {
+                  "name": "RoleShowSettingCs",
+                  "number": 1043
+                },
+                {
+                  "name": "RoleShowSettingSc",
+                  "number": 1044
+                },
+                {
+                  "name": "BannerListCs",
+                  "number": 1045
+                },
+                {
+                  "name": "BannerListSc",
+                  "number": 1046
+                },
+                {
+                  "name": "DrawCardCs",
+                  "number": 1047
+                },
+                {
+                  "name": "DrawCardSc",
+                  "number": 1048
+                },
+                {
+                  "name": "DispatchCs",
+                  "number": 1049
+                },
+                {
+                  "name": "DispatchSc",
+                  "number": 1050
+                },
+                {
+                  "name": "ModifyDispatchCs",
+                  "number": 1051
+                },
+                {
+                  "name": "ModifyDispatchSc",
+                  "number": 1052
+                },
+                {
+                  "name": "ReceiveDispatchRewardCs",
+                  "number": 1053
+                },
+                {
+                  "name": "ReceiveDispatchRewardSc",
+                  "number": 1054
+                },
+                {
+                  "name": "UseItemDispatchCs",
+                  "number": 1055
+                },
+                {
+                  "name": "UseItemDispatchSc",
+                  "number": 1056
+                },
+                {
+                  "name": "SaleEquipCs",
+                  "number": 1057
+                },
+                {
+                  "name": "SaleEquipSc",
+                  "number": 1058
+                },
+                {
+                  "name": "CarouselAdCs",
+                  "number": 1059
+                },
+                {
+                  "name": "CarouselAdSc",
+                  "number": 1060
+                },
+                {
+                  "name": "AnnouncementCs",
+                  "number": 1061
+                },
+                {
+                  "name": "AnnouncementSc",
+                  "number": 1062
+                },
+                {
+                  "name": "NewPlayerQuestInfoCs",
+                  "number": 1063
+                },
+                {
+                  "name": "NewPlayerQuestInfoSc",
+                  "number": 1064
+                },
+                {
+                  "name": "NewPlayerQuestReceiveRewardCs",
+                  "number": 1065
+                },
+                {
+                  "name": "NewPlayerQuestReceiveRewardSc",
+                  "number": 1066
+                },
+                {
+                  "name": "BuyAllEnergyCs",
+                  "number": 1067
+                },
+                {
+                  "name": "BuyAllEnergySc",
+                  "number": 1068
+                },
+                {
+                  "name": "MailListCs",
+                  "number": 2001
+                },
+                {
+                  "name": "MailListSc",
+                  "number": 2002
+                },
+                {
+                  "name": "ExtractMailCs",
+                  "number": 2003
+                },
+                {
+                  "name": "ExtractMailSc",
+                  "number": 2004
+                },
+                {
+                  "name": "StoreListCs",
+                  "number": 2101
+                },
+                {
+                  "name": "StoreListSc",
+                  "number": 2102
+                },
+                {
+                  "name": "StoreBuyCs",
+                  "number": 2103
+                },
+                {
+                  "name": "StoreBuySc",
+                  "number": 2104
+                },
+                {
+                  "name": "UpdateBargainStoreCs",
+                  "number": 2105
+                },
+                {
+                  "name": "UpdateBargainStoreSc",
+                  "number": 2106
+                },
+                {
+                  "name": "DiamondExpiryListCs",
+                  "number": 2107
+                },
+                {
+                  "name": "DiamondExpiryListSc",
+                  "number": 2108
+                },
+                {
+                  "name": "EventListCs",
+                  "number": 2201
+                },
+                {
+                  "name": "EventListSc",
+                  "number": 2202
+                },
+                {
+                  "name": "EnterGameLevelCS",
+                  "number": 3000
+                },
+                {
+                  "name": "EnterGameLevelSC",
+                  "number": 3001
+                },
+                {
+                  "name": "StartGameLevelCS",
+                  "number": 3002
+                },
+                {
+                  "name": "StartGameLevelSC",
+                  "number": 3003
+                },
+                {
+                  "name": "EndGameLevelCS",
+                  "number": 3004
+                },
+                {
+                  "name": "EndGameLevelSC",
+                  "number": 3005
+                },
+                {
+                  "name": "ExitGameLevelCS",
+                  "number": 3006
+                },
+                {
+                  "name": "ExitGameLevelSC",
+                  "number": 3007
+                },
+                {
+                  "name": "StageSweepCS",
+                  "number": 3008
+                },
+                {
+                  "name": "StageSweepSC",
+                  "number": 3009
+                },
+                {
+                  "name": "EnterEventStageCS",
+                  "number": 3030
+                },
+                {
+                  "name": "EnterEventStageSC",
+                  "number": 3031
+                },
+                {
+                  "name": "StartEventStageCS",
+                  "number": 3032
+                },
+                {
+                  "name": "StartEventStageSC",
+                  "number": 3033
+                },
+                {
+                  "name": "EndEventStageCS",
+                  "number": 3034
+                },
+                {
+                  "name": "EndEventStageSC",
+                  "number": 3035
+                },
+                {
+                  "name": "ExitEventStageCS",
+                  "number": 3036
+                },
+                {
+                  "name": "ExitEventStageSC",
+                  "number": 3037
+                },
+                {
+                  "name": "EnterTowerStageCS",
+                  "number": 3050
+                },
+                {
+                  "name": "EnterTowerStageSC",
+                  "number": 3051
+                },
+                {
+                  "name": "StartTowerStageCS",
+                  "number": 3052
+                },
+                {
+                  "name": "StartTowerStageSC",
+                  "number": 3053
+                },
+                {
+                  "name": "EndTowerStageCS",
+                  "number": 3054
+                },
+                {
+                  "name": "EndTowerStageSC",
+                  "number": 3055
+                },
+                {
+                  "name": "ExitTowerStageCS",
+                  "number": 3056
+                },
+                {
+                  "name": "ExitTowerStageSC",
+                  "number": 3057
+                },
+                {
+                  "name": "TowerMilestoneRewardCS",
+                  "number": 3070
+                },
+                {
+                  "name": "TowerMilestoneRewardSC",
+                  "number": 3071
+                },
+                {
+                  "name": "EnterStoryCS",
+                  "number": 3100
+                },
+                {
+                  "name": "EnterStorySC",
+                  "number": 3101
+                },
+                {
+                  "name": "EndStoryCS",
+                  "number": 3102
+                },
+                {
+                  "name": "EndStorySC",
+                  "number": 3103
+                },
+                {
+                  "name": "ExitStoryCS",
+                  "number": 3104
+                },
+                {
+                  "name": "ExitStorySC",
+                  "number": 3105
+                },
+                {
+                  "name": "FindFriendCS",
+                  "number": 4000
+                },
+                {
+                  "name": "FindFriendSC",
+                  "number": 4001
+                },
+                {
+                  "name": "ApplyFriendCS",
+                  "number": 4002
+                },
+                {
+                  "name": "ApplyFriendSC",
+                  "number": 4003
+                },
+                {
+                  "name": "FriendListCS",
+                  "number": 4004
+                },
+                {
+                  "name": "FriendListSC",
+                  "number": 4005
+                },
+                {
+                  "name": "AddFriendCS",
+                  "number": 4006
+                },
+                {
+                  "name": "AddFriendSC",
+                  "number": 4007
+                },
+                {
+                  "name": "RevokeApplyFriendCS",
+                  "number": 4008
+                },
+                {
+                  "name": "RevokeApplyFriendSC",
+                  "number": 4009
+                },
+                {
+                  "name": "DelFriendCS",
+                  "number": 4010
+                },
+                {
+                  "name": "DelFriendSC",
+                  "number": 4011
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "ProtobufMsg"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Username",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Password",
+                  "number": 2,
+                  "valueType": "string"
+                },
+                {
+                  "name": "BannedWordR18",
+                  "number": 3,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "Version",
+                  "number": 4,
+                  "valueType": "string"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "LoginCSMsg"
+            },
+            {
+              "fields": [
+                {
+                  "name": "UserId",
+                  "number": 2,
+                  "valueType": "string"
+                },
+                {
+                  "name": "PlayerId",
+                  "number": 3,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Token",
+                  "number": 4,
+                  "valueType": "string"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "LoginSCMsg"
+            },
+            {
+              "fields": [
+                {
+                  "name": "ServerTime",
+                  "number": 2,
+                  "valueType": "int64"
+                },
+                {
+                  "name": "FirstLoginPer",
+                  "number": 3,
+                  "valueType": "bool"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "LoginGameSCMsg"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Level",
+                  "number": 2,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "Exp",
+                  "number": 3,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "Nickname",
+                  "number": 4,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Gold",
+                  "number": 5,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "Diamond",
+                  "number": 6,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "FreeDiamond",
+                  "number": 1,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "Energy",
+                  "number": 7,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "Profile",
+                  "number": 8,
+                  "valueType": "string"
+                },
+                {
+                  "name": "BuyTime",
+                  "number": 9,
+                  "valueType": "int64"
+                },
+                {
+                  "name": "DaysLeft",
+                  "number": 10,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "ShowRoleId",
+                  "number": 11,
+                  "valueType": "string"
+                },
+                {
+                  "name": "InviteId",
+                  "number": 12,
+                  "valueType": "string"
+                },
+                {
+                  "name": "RegisterTime",
+                  "number": 13,
+                  "valueType": "int64"
+                },
+                {
+                  "name": "ProfileRoleId",
+                  "number": 14,
+                  "valueType": "string"
+                },
+                {
+                  "name": "CurGuideId",
+                  "number": 15,
+                  "valueType": "string"
+                },
+                {
+                  "name": "AutoType",
+                  "number": 16,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "SpeedType",
+                  "number": 17,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "SortType",
+                  "number": 18,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "NewPlayerQuestUnlockDay",
+                  "number": 19,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "NewPlayerQuestAllCompleted",
+                  "number": 20,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "NewPlayerQuestRedDot",
+                  "number": 21,
+                  "valueType": "int32"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "HeartbeatSCMsg"
+                  },
+                  "name": "HeartbeatInfo",
+                  "number": 22,
+                  "valueType": "message"
+                },
+                {
+                  "name": "CurTeamId",
+                  "number": 23,
+                  "valueType": "string"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "RoleMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "RoleInfos",
+                  "number": 50,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "TeamMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "TeamInfos",
+                  "number": 51,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "EquipMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "EquipInfos",
+                  "number": 52,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "AnnouncementMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "AnncMsgInfo",
+                  "number": 53,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "ItemMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "ItemInfos",
+                  "number": 54,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "GameLevelMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "GameLevelInfos",
+                  "number": 55,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "valueType": "string"
+                  },
+                  "name": "ShowRoleIds",
+                  "number": 56,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "CheckMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "DailyLoginMsgInfos",
+                  "number": 57,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "CheckMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "PlatformCheckMsgInfos",
+                  "number": 58,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "CheckMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "MonthCardMsgInfos",
+                  "number": 59,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "StoryMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "RoleStoryInfos",
+                  "number": 60,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "GameLevelMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "EventStageInfos",
+                  "number": 61,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "TowerStageMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "TowerStageInfos",
+                  "number": 62,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "GameLevelMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "ResourceStageInfos",
+                  "number": 63,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "TowerRewardMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "TowerRewardInfos",
+                  "number": 64,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "QuestMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "NewPlayerQuestInfos",
+                  "number": 65,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "DiamondExpiryMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "DiamondExpiryInfos",
+                  "number": 66,
+                  "valueType": "repeated"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "InitGameDataSCMsg"
+            },
+            {
+              "fields": [
+                {
+                  "name": "MailRedDot",
+                  "number": 1,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "IapEnabled",
+                  "number": 2,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "LoginEnabled",
+                  "number": 3,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "DrawCardEnabled",
+                  "number": 4,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "StageEnabled",
+                  "number": 5,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "TowerEnabled",
+                  "number": 6,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "EventStageEnabled",
+                  "number": 7,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "ResourceStageEnabled",
+                  "number": 8,
+                  "valueType": "bool"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "HeartbeatSCMsg"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "LevelMsgInfo"
+                  },
+                  "name": "StrongInfo",
+                  "number": 10,
+                  "valueType": "message"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "LevelMsgInfo"
+                  },
+                  "name": "DebrisInfo",
+                  "number": 11,
+                  "valueType": "message"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "LevelMsgInfo"
+                  },
+                  "name": "KizunaInfo",
+                  "number": 12,
+                  "valueType": "message"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "SkillMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "InitiativeSkills",
+                  "number": 13,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "SkillMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "PassiveSkills",
+                  "number": 14,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "valueType": "int32"
+                  },
+                  "name": "AddGrowupProtps",
+                  "number": 15,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "valueType": "int32"
+                  },
+                  "name": "FinalProtps",
+                  "number": 16,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "valueType": "int32"
+                  },
+                  "name": "DispatchProps",
+                  "number": 17,
+                  "valueType": "repeated"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "RoleMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Level",
+                  "number": 1,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "Exp",
+                  "number": 2,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "LevelMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Level",
+                  "number": 2,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "IsUnlock",
+                  "number": 3,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "MasteryLevel",
+                  "number": 4,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "SkillMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Formation",
+                  "number": 2,
+                  "valueType": "int32"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "TeamRoleMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "RoleInfos",
+                  "number": 10,
+                  "valueType": "repeated"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "TeamMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "RoleId",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "PosIndex",
+                  "number": 2,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "EquipId",
+                  "number": 10,
+                  "valueType": "string"
+                },
+                {
+                  "name": "EquipId2",
+                  "number": 11,
+                  "valueType": "string"
+                },
+                {
+                  "name": "SkillId",
+                  "number": 12,
+                  "valueType": "string"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "TeamRoleMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "DataId",
+                  "number": 2,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Level",
+                  "number": 3,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "Exp",
+                  "number": 4,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "EvolutionLevel",
+                  "number": 5,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "CreateTime",
+                  "number": 6,
+                  "valueType": "int64"
+                },
+                {
+                  "element": {
+                    "valueType": "string"
+                  },
+                  "name": "PassiveSkills",
+                  "number": 20,
+                  "valueType": "repeated"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "EquipMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "EndTime",
+                  "number": 2,
+                  "valueType": "int64"
+                },
+                {
+                  "name": "ListTitle",
+                  "number": 3,
+                  "valueType": "string"
+                },
+                {
+                  "name": "ContentTitle",
+                  "number": 4,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Content",
+                  "number": 5,
+                  "valueType": "string"
+                },
+                {
+                  "name": "ImageUrl",
+                  "number": 6,
+                  "valueType": "string"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "AnnouncementMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Num",
+                  "number": 2,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "ItemMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "IsUnlock",
+                  "number": 2,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "DayCount",
+                  "number": 3,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "GameLevelMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "State",
+                  "number": 2,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "CheckMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Count",
+                  "number": 2,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "IsUnlock",
+                  "number": 3,
+                  "valueType": "bool"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "StoryMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "StarNum",
+                  "number": 2,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "IsWin",
+                  "number": 3,
+                  "valueType": "bool"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "TowerStageMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "State",
+                  "number": 2,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "TowerRewardMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "QuestId",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Count",
+                  "number": 3,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "Total",
+                  "number": 4,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "State",
+                  "number": 5,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "Deadline",
+                  "number": 7,
+                  "valueType": "int64"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "QuestMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "ExpiryTime",
+                  "number": 2,
+                  "valueType": "int64"
+                },
+                {
+                  "name": "DiamondNum",
+                  "number": 3,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "DiamondExpiryMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Profile",
+                  "number": 1,
+                  "valueType": "string"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "ModifyProfileCSMsg"
+            },
+            {
+              "fields": [
+                {
+                  "name": "ProfileRoleId",
+                  "number": 1,
+                  "valueType": "string"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "ModifyProfileRoleCSMsg"
+            },
+            {
+              "fields": [
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "CheckMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "DailyLoginMsgInfos",
+                  "number": 1,
+                  "valueType": "repeated"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "DailyLoginSCMsg"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "DailyLoginReceiveRewardCSMsg"
+            },
+            {
+              "fields": [
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "CheckMsgInfo"
+                  },
+                  "name": "DailyLoginMsgInfo",
+                  "number": 1,
+                  "valueType": "message"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgData"
+                  },
+                  "name": "BalanceMsgData",
+                  "number": 10,
+                  "valueType": "message"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "DailyLoginReceiveRewardSCMsg"
+            },
+            {
+              "fields": [
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "CurrencyMsgData"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "Currencys",
+                  "number": 1,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "ItemMsgData"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "Items",
+                  "number": 2,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "ExpMsgData"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "Exps",
+                  "number": 3,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "DataMsgData"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "Datas",
+                  "number": 4,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "RoleMsgData"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "RoleInfos",
+                  "number": 5,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "EquipMsgData"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "Equips",
+                  "number": 6,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "SkillMsgData"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "Skills",
+                  "number": 7,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "RolePropsMsgData"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "DisphProps",
+                  "number": 8,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "RolePropsMsgData"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "GrowupProps",
+                  "number": 9,
+                  "valueType": "repeated"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "BalanceMsgData"
+            },
+            {
+              "fields": [
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgType"
+                  },
+                  "name": "Type",
+                  "number": 1,
+                  "valueType": "message"
+                },
+                {
+                  "name": "Value",
+                  "number": 2,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "CurrencyMsgData"
+            },
+            {
+              "fields": [
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgType"
+                  },
+                  "name": "Type",
+                  "number": 1,
+                  "valueType": "message"
+                },
+                {
+                  "name": "ItemId",
+                  "number": 2,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Count",
+                  "number": 3,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "Time",
+                  "number": 4,
+                  "valueType": "int64"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "ItemMsgData"
+            },
+            {
+              "fields": [
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgType"
+                  },
+                  "name": "Type",
+                  "number": 1,
+                  "valueType": "message"
+                },
+                {
+                  "name": "Level",
+                  "number": 2,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "Exp",
+                  "number": 3,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "ExpMsgData"
+            },
+            {
+              "fields": [
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgType"
+                  },
+                  "name": "Type",
+                  "number": 1,
+                  "valueType": "message"
+                },
+                {
+                  "name": "DataId",
+                  "number": 2,
+                  "valueType": "string"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "DataMsgData"
+            },
+            {
+              "fields": [
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgType"
+                  },
+                  "name": "Type",
+                  "number": 1,
+                  "valueType": "message"
+                },
+                {
+                  "name": "RoleId",
+                  "number": 2,
+                  "valueType": "string"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "LevelMsgInfo"
+                  },
+                  "name": "StrongInfo",
+                  "number": 10,
+                  "valueType": "message"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "LevelMsgInfo"
+                  },
+                  "name": "DebrisInfo",
+                  "number": 11,
+                  "valueType": "message"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "LevelMsgInfo"
+                  },
+                  "name": "KizunaInfo",
+                  "number": 12,
+                  "valueType": "message"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "SkillMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "InitiativeSkills",
+                  "number": 13,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "SkillMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "PassiveSkills",
+                  "number": 14,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "valueType": "int32"
+                  },
+                  "name": "AddGrowupProtps",
+                  "number": 15,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "valueType": "int32"
+                  },
+                  "name": "FinalProtps",
+                  "number": 16,
+                  "valueType": "repeated"
+                },
+                {
+                  "element": {
+                    "valueType": "int32"
+                  },
+                  "name": "DispatchProps",
+                  "number": 17,
+                  "valueType": "repeated"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "RoleMsgData"
+            },
+            {
+              "fields": [
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgType"
+                  },
+                  "name": "Type",
+                  "number": 1,
+                  "valueType": "message"
+                },
+                {
+                  "name": "EquipId",
+                  "number": 2,
+                  "valueType": "string"
+                },
+                {
+                  "name": "DataId",
+                  "number": 3,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Level",
+                  "number": 4,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "Exp",
+                  "number": 5,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "EvolutionLevel",
+                  "number": 6,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "CreateTime",
+                  "number": 7,
+                  "valueType": "int64"
+                },
+                {
+                  "element": {
+                    "valueType": "string"
+                  },
+                  "name": "PassiveSkills",
+                  "number": 20,
+                  "valueType": "repeated"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "EquipMsgData"
+            },
+            {
+              "fields": [
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgType"
+                  },
+                  "name": "Type",
+                  "number": 1,
+                  "valueType": "message"
+                },
+                {
+                  "name": "RoleId",
+                  "number": 2,
+                  "valueType": "string"
+                },
+                {
+                  "name": "SkillId",
+                  "number": 3,
+                  "valueType": "string"
+                },
+                {
+                  "name": "IsUnlock",
+                  "number": 5,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "MasteryLevel",
+                  "number": 6,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "SkillMsgData"
+            },
+            {
+              "fields": [
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgType"
+                  },
+                  "name": "Type",
+                  "number": 1,
+                  "valueType": "message"
+                },
+                {
+                  "name": "RoleId",
+                  "number": 2,
+                  "valueType": "string"
+                },
+                {
+                  "element": {
+                    "valueType": "int32"
+                  },
+                  "name": "Props",
+                  "number": 10,
+                  "valueType": "repeated"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "RolePropsMsgData"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Energy",
+                  "number": 1,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "UpdateEnergySCMsg"
+            },
+            {
+              "fields": [
+                {
+                  "name": "UnlockDay",
+                  "number": 1,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "AllCompleted",
+                  "number": 2,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "RedDot",
+                  "number": 3,
+                  "valueType": "int32"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "QuestMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "QuestInfos",
+                  "number": 10,
+                  "valueType": "repeated"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "NewPlayerQuestInfoSCMsg"
+            },
+            {
+              "fields": [
+                {
+                  "element": {
+                    "valueType": "string"
+                  },
+                  "name": "QuestIds",
+                  "number": 1,
+                  "valueType": "repeated"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "NewPlayerQuestReceiveRewardCSMsg"
+            },
+            {
+              "fields": [
+                {
+                  "element": {
+                    "valueType": "string"
+                  },
+                  "name": "QuestIds",
+                  "number": 1,
+                  "valueType": "repeated"
+                },
+                {
+                  "name": "AllCompleted",
+                  "number": 2,
+                  "valueType": "bool"
+                },
+                {
+                  "name": "RedDot",
+                  "number": 3,
+                  "valueType": "int32"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgData"
+                  },
+                  "name": "BalanceMsgData",
+                  "number": 50,
+                  "valueType": "message"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "NewPlayerQuestReceiveRewardSCMsg"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "PlayerId",
+                  "number": 2,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Name",
+                  "number": 3,
+                  "valueType": "string"
+                },
+                {
+                  "name": "Level",
+                  "number": 4,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "LastLoginTime",
+                  "number": 5,
+                  "valueType": "int64"
+                },
+                {
+                  "name": "ShowRoleId",
+                  "number": 6,
+                  "valueType": "string"
+                },
+                {
+                  "name": "FriendTime",
+                  "number": 7,
+                  "valueType": "int64"
+                },
+                {
+                  "name": "Profile",
+                  "number": 8,
+                  "valueType": "string"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "FriendTeamMsgInfo"
+                  },
+                  "name": "TeamInfo",
+                  "number": 50,
+                  "valueType": "message"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "FriendMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Id",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "element": {
+                    "messageType": {
+                      "namespace": "Protobuf",
+                      "type": "FriendTeamRoleMsgInfo"
+                    },
+                    "valueType": "message"
+                  },
+                  "name": "RoleInfos",
+                  "number": 10,
+                  "valueType": "repeated"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "FriendTeamMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "RoleId",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "PosIndex",
+                  "number": 2,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "FightingAbility",
+                  "number": 3,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "FriendTeamRoleMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Energy",
+                  "number": 1,
+                  "valueType": "int32"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgData"
+                  },
+                  "name": "BalanceMsgData",
+                  "number": 50,
+                  "valueType": "message"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "StartGameLevelSCMsg"
+            },
+            {
+              "fields": [
+                {
+                  "name": "SkillId",
+                  "number": 1,
+                  "valueType": "string"
+                },
+                {
+                  "name": "OldMasteryLevel",
+                  "number": 2,
+                  "valueType": "int32"
+                },
+                {
+                  "name": "CurMasteryLevel",
+                  "number": 3,
+                  "valueType": "int32"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "BalanceRoleSkillMsgInfo"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Energy",
+                  "number": 1,
+                  "valueType": "int32"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgData"
+                  },
+                  "name": "BalanceMsgData",
+                  "number": 50,
+                  "valueType": "message"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "StartEventStageSCMsg"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Energy",
+                  "number": 1,
+                  "valueType": "int32"
+                },
+                {
+                  "messageType": {
+                    "namespace": "Protobuf",
+                    "type": "BalanceMsgData"
+                  },
+                  "name": "BalanceMsgData",
+                  "number": 50,
+                  "valueType": "message"
+                }
+              ],
+              "namespace": "Protobuf",
+              "type": "StartTowerStageSCMsg"
+            }
+          ],
+          "selectionLimitReached": false
+        }
+      ],
+      "bytesScanned": 672530432,
+      "elapsedMs": 3527,
+      "heapBytes": 672530432,
+      "note": "Only static managed protobuf declarations are extracted. No credentials, player objects, raw payloads, Unity calls or memory writes.",
+      "schemaProbeVersion": 1,
+      "stoppedEarly": false
+    }
+  ]
+}

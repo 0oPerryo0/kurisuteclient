@@ -1,0 +1,471 @@
+{
+  "classCandidates": [
+    {
+      "address": 365534676,
+      "nameOffset": 4,
+      "namespace": "UI.Base",
+      "note": "Possible class prefix offset; must be validated against object and field references.",
+      "type": "BaseUIPlotWin"
+    },
+    {
+      "address": 365534672,
+      "nameOffset": 8,
+      "namespace": "UI.Base",
+      "note": "Possible class prefix offset; must be validated against object and field references.",
+      "type": "BaseUIPlotWin"
+    },
+    {
+      "address": 365534668,
+      "nameOffset": 12,
+      "namespace": "UI.Base",
+      "note": "Possible class prefix offset; must be validated against object and field references.",
+      "type": "BaseUIPlotWin"
+    },
+    {
+      "address": 365534664,
+      "nameOffset": 16,
+      "namespace": "UI.Base",
+      "note": "Possible class prefix offset; must be validated against object and field references.",
+      "type": "BaseUIPlotWin"
+    },
+    {
+      "address": 365534660,
+      "nameOffset": 20,
+      "namespace": "UI.Base",
+      "note": "Possible class prefix offset; must be validated against object and field references.",
+      "type": "BaseUIPlotWin"
+    },
+    {
+      "address": 365534656,
+      "nameOffset": 24,
+      "namespace": "UI.Base",
+      "note": "Possible class prefix offset; must be validated against object and field references.",
+      "type": "BaseUIPlotWin"
+    }
+  ],
+  "elapsedMs": 113608,
+  "fieldCandidates": [
+    {
+      "address": 450665060,
+      "classAddress": 365534672,
+      "name": "Img_PlotBg",
+      "offset": 60,
+      "owner": "BaseUIPlotWin"
+    },
+    {
+      "address": 450665080,
+      "classAddress": 365534672,
+      "name": "Img_TalkBg",
+      "offset": 64,
+      "owner": "BaseUIPlotWin"
+    },
+    {
+      "address": 450665100,
+      "classAddress": 365534672,
+      "name": "Text_RoleName",
+      "offset": 68,
+      "owner": "BaseUIPlotWin"
+    },
+    {
+      "address": 450665120,
+      "classAddress": 365534672,
+      "name": "Text_RoleNameDec",
+      "offset": 72,
+      "owner": "BaseUIPlotWin"
+    }
+  ],
+  "heapBytes": 672071680,
+  "heapChangedDuringScan": false,
+  "methodCandidates": [],
+  "nameReferences": {
+    "BaseUIPlotWin": [
+      {
+        "address": 66689052,
+        "nearbyNameReferences": [],
+        "target": 66689224
+      },
+      {
+        "address": 107699600,
+        "nearbyNameReferences": [],
+        "target": 103526385
+      },
+      {
+        "address": 365534680,
+        "nearbyNameReferences": [],
+        "target": 103526385
+      }
+    ],
+    "BtnCloseFunctionClick": [
+      {
+        "address": 450681348,
+        "nearbyNameReferences": [],
+        "target": 103510445
+      }
+    ],
+    "Img_PlotBg": [
+      {
+        "address": 312155916,
+        "nearbyNameReferences": [],
+        "target": 103495840
+      },
+      {
+        "address": 450665060,
+        "nearbyNameReferences": [],
+        "target": 103495840
+      },
+      {
+        "address": 457979612,
+        "nearbyNameReferences": [],
+        "target": 311734584
+      },
+      {
+        "address": 458637756,
+        "nearbyNameReferences": [],
+        "target": 311734584
+      }
+    ],
+    "Img_TalkBg": [
+      {
+        "address": 312155936,
+        "nearbyNameReferences": [],
+        "target": 103495567
+      },
+      {
+        "address": 450445340,
+        "nearbyNameReferences": [],
+        "target": 457848456
+      },
+      {
+        "address": 450665080,
+        "nearbyNameReferences": [],
+        "target": 103495567
+      },
+      {
+        "address": 455282204,
+        "nearbyNameReferences": [],
+        "target": 457848456
+      }
+    ],
+    "SetPlotDialogPanelVisible": [
+      {
+        "address": 312166780,
+        "nearbyNameReferences": [],
+        "target": 103473040
+      }
+    ],
+    "SetVisible": [
+      {
+        "address": 55519828,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55555116,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55555364,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55555580,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55556060,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55556436,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55556652,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55557812,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55559608,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55560152,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55560748,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55561240,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55561720,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55567988,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55568424,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      },
+      {
+        "address": 55568972,
+        "nearbyNameReferences": [],
+        "target": 32009821
+      }
+    ],
+    "Text_RoleName": [
+      {
+        "address": 312155956,
+        "nearbyNameReferences": [],
+        "target": 103476637
+      },
+      {
+        "address": 450446108,
+        "nearbyNameReferences": [],
+        "target": 304317880
+      },
+      {
+        "address": 450665100,
+        "nearbyNameReferences": [],
+        "target": 103476637
+      },
+      {
+        "address": 457978028,
+        "nearbyNameReferences": [],
+        "target": 304317880
+      }
+    ],
+    "Text_RoleNameDec": [
+      {
+        "address": 312155976,
+        "nearbyNameReferences": [],
+        "target": 103436245
+      },
+      {
+        "address": 365237356,
+        "nearbyNameReferences": [],
+        "target": 455150808
+      },
+      {
+        "address": 450446908,
+        "nearbyNameReferences": [],
+        "target": 455150808
+      },
+      {
+        "address": 450665120,
+        "nearbyNameReferences": [],
+        "target": 103436245
+      }
+    ],
+    "UIBeginnerGuideWin": [
+      {
+        "address": 66427132,
+        "nearbyNameReferences": [],
+        "target": 66427304
+      }
+    ],
+    "UIPlotWin": [
+      {
+        "address": 66330940,
+        "nearbyNameReferences": [],
+        "target": 66331112
+      },
+      {
+        "address": 332318044,
+        "nearbyNameReferences": [],
+        "target": 455142648
+      },
+      {
+        "address": 365234252,
+        "nearbyNameReferences": [],
+        "target": 455142648
+      },
+      {
+        "address": 454119036,
+        "nearbyNameReferences": [],
+        "target": 458086184
+      }
+    ]
+  },
+  "names": {
+    "BaseUIPlotWin": [
+      66689116,
+      66689224,
+      98539481,
+      103526385
+    ],
+    "BtnCloseFunctionClick": [
+      98523541,
+      103510445
+    ],
+    "Img_PlotBg": [
+      98508936,
+      103495840,
+      311734584
+    ],
+    "Img_TalkBg": [
+      96251928,
+      98508663,
+      103495567,
+      457848456
+    ],
+    "SetPlotDialogPanelVisible": [
+      98486136,
+      103473040
+    ],
+    "SetVisible": [
+      32009821,
+      98486347,
+      103473251
+    ],
+    "Text_RoleName": [
+      98489733,
+      103476637,
+      304317880
+    ],
+    "Text_RoleNameDec": [
+      98449341,
+      103436245,
+      455150808
+    ],
+    "UIBeginnerGuideWin": [
+      66427196,
+      66427304
+    ],
+    "UIPlotWin": [
+      57649256,
+      66331004,
+      66331112,
+      449645020,
+      455142648,
+      458086184
+    ]
+  },
+  "note": "Read-only IL2CPP32 layout hypotheses. Matches can be metadata or stale allocations, not live story objects. No memory was written and no Unity method or export was called.",
+  "objectCandidates": [
+    {
+      "address": 106461524,
+      "classAddress": 365534672,
+      "dialogueFieldLinks": [
+        {
+          "field": "Img_PlotBg",
+          "nonNullInHeap": false,
+          "offset": 60
+        },
+        {
+          "field": "Img_TalkBg",
+          "nonNullInHeap": false,
+          "offset": 64
+        },
+        {
+          "field": "Text_RoleName",
+          "nonNullInHeap": false,
+          "offset": 68
+        },
+        {
+          "field": "Text_RoleNameDec",
+          "nonNullInHeap": false,
+          "offset": 72
+        }
+      ],
+      "type": "BaseUIPlotWin"
+    },
+    {
+      "address": 365534316,
+      "classAddress": 365534672,
+      "dialogueFieldLinks": [
+        {
+          "field": "Img_PlotBg",
+          "nonNullInHeap": false,
+          "offset": 60
+        },
+        {
+          "field": "Img_TalkBg",
+          "nonNullInHeap": false,
+          "offset": 64
+        },
+        {
+          "field": "Text_RoleName",
+          "nonNullInHeap": false,
+          "offset": 68
+        },
+        {
+          "field": "Text_RoleNameDec",
+          "nonNullInHeap": false,
+          "offset": 72
+        }
+      ],
+      "type": "BaseUIPlotWin"
+    },
+    {
+      "address": 365534708,
+      "classAddress": 365534672,
+      "dialogueFieldLinks": [
+        {
+          "field": "Img_PlotBg",
+          "nonNullInHeap": false,
+          "offset": 60
+        },
+        {
+          "field": "Img_TalkBg",
+          "nonNullInHeap": true,
+          "offset": 64
+        },
+        {
+          "field": "Text_RoleName",
+          "nonNullInHeap": false,
+          "offset": 68
+        },
+        {
+          "field": "Text_RoleNameDec",
+          "nonNullInHeap": false,
+          "offset": 72
+        }
+      ],
+      "type": "BaseUIPlotWin"
+    }
+  ],
+  "passes": [
+    {
+      "bytesScanned": 672071680,
+      "name": "exact names"
+    },
+    {
+      "bytesScanned": 672071680,
+      "name": "name references and class layouts"
+    },
+    {
+      "bytesScanned": 672071680,
+      "name": "field and method candidates"
+    },
+    {
+      "bytesScanned": 672071680,
+      "name": "object candidates"
+    }
+  ],
+  "probeVersion": 2,
+  "scanLimitBytes": 672071680,
+  "stoppedEarly": false
+}
