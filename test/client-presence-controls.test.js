@@ -31,6 +31,7 @@ function fixture(saved) {
     app: { commandLine: { appendSwitch() {} }, whenReady: () => ({ then() {} }), on() {},
       getPath: () => 'D:\\isolated-client-fixture' },
     Menu: { buildFromTemplate(template) { menu = template; return { popup() {} }; } },
+    protocol: { registerSchemesAsPrivileged() {} },
     dialog: { async showMessageBox(_window, options) { dialogs.push(options); return { response }; } },
   };
   const context = vm.createContext({ __dirname: path.dirname(mainPath), console, setTimeout, clearTimeout,
@@ -46,16 +47,17 @@ function fixture(saved) {
     } });
   vm.runInContext(fs.readFileSync(mainPath, 'utf8') + `
     globalThis.controls = {
-      initialize(mockWindow, mockTitle) { settings = readSettings(); window = mockWindow; playerTitle = mockTitle; },
+      initialize(mockWindow, mockTitle, mockGame) { settings = readSettings(); window = mockWindow; playerTitle = mockTitle; game = mockGame; },
       command: runCommand, showMenu: showClientMenu, state, updatePresence,
       diagnosticsAvailable: () => [inspectStoryUi, inspectStoryRuntime, startPlayerApiDiagnostic, savePlayerApiDiagnostic]
         .every(value => typeof value === 'function'),
     };
   `, context, { filename: mainPath });
   const controls = context.controls;
+  const reloads = [];
   controls.initialize({ isDestroyed: () => false, isFullScreen: () => false, webContents: { send() {} } },
-    { setPlayer(value) { titlePlayers.push(value); } });
-  return { controls, monitors, clients, dialogs, titlePlayers, writes,
+    { setPlayer(value) { titlePlayers.push(value); } }, { webContents: { reload() { reloads.push(true); } } });
+  return { controls, monitors, clients, dialogs, titlePlayers, writes, reloads,
     menu() { controls.showMenu(); return menu; }, setResponse(value) { response = value; } };
 }
 
@@ -119,4 +121,49 @@ test('saved Enable state governs refresh and nickname without obsolete split set
   assert.equal(f.clients[0].players.at(-1).shareName, true);
   await assert.rejects(f.controls.command('discordShareName'), /Unknown command/);
   await assert.rejects(f.controls.command('discordPlayerPolling'), /Unknown command/);
+});
+
+test('game language is opt-in: Japanese by default, consent before the first switch, then reload', async () => {
+  const f = fixture();
+  const language = f.menu().find(item => item.label === 'Game language (experimental)');
+  assert.deepEqual(Array.from(language.submenu, item => [item.label, item.checked]),
+    [['日本語 (original)', true], ['简体中文', false], ['繁體中文（台灣，劇情保留原文）', false]]);
+  f.setResponse(0);
+  await f.controls.command('gameLanguage', 'zh');
+  assert.equal(f.controls.state().gameLanguage, 'ja');
+  assert.equal(f.reloads.length, 0);
+  f.setResponse(1);
+  await f.controls.command('gameLanguage', 'zh');
+  assert.equal(f.dialogs.length, 2);
+  assert.match(f.dialogs[1].detail, /may violate the service terms/);
+  assert.match(f.dialogs[1].detail, /story dialogue stays in the original Simplified Chinese/);
+  assert.equal(f.controls.state().gameLanguage, 'zh');
+  assert.equal(f.writes.at(-1).gameLanguage, 'zh');
+  assert.equal(f.reloads.length, 1);
+  await f.controls.command('gameLanguage', 'tw');
+  assert.equal(f.controls.state().gameLanguage, 'tw');
+  await f.controls.command('gameLanguage', 'ja');
+  assert.equal(f.dialogs.length, 2, 'Switching between patched languages or back to Japanese needs no consent');
+  assert.equal(f.controls.state().gameLanguage, 'ja');
+  assert.equal(f.reloads.length, 3);
+  await f.controls.command('gameLanguage', 'en');
+  await f.controls.command('gameLanguage', 'xx');
+  assert.equal(f.controls.state().gameLanguage, 'ja');
+});
+
+test('update checks are on by default and listed in an Updates submenu', async () => {
+  const f = fixture();
+  const updates = f.menu().find(item => item.label === 'Updates');
+  assert.deepEqual(Array.from(updates.submenu, item => item.label), ['Not checked yet', 'Check now', 'Check automatically']);
+  assert.equal(updates.submenu[2].checked, true);
+  await f.controls.command('updateCheck');
+  assert.equal(f.controls.state().updateCheck, false);
+  assert.equal(f.writes.at(-1).updateCheck, false);
+  assert.equal(fixture({ updateCheck: false }).controls.state().updateCheck, false);
+});
+
+test('saved game language is validated', () => {
+  assert.equal(fixture({ gameLanguage: 'zh' }).controls.state().gameLanguage, 'zh');
+  assert.equal(fixture({ gameLanguage: 'constructor' }).controls.state().gameLanguage, 'ja');
+  assert.equal(fixture({ gameLanguage: 'en' }).controls.state().gameLanguage, 'ja', 'English is no longer offered');
 });
