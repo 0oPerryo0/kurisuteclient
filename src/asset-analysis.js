@@ -7,13 +7,25 @@ const TERMS = [
   'speedmultiplier', 'battlemanager', 'gamemanager', 'speedcontroller',
   'global-metadata', 'unityengine.time',
 ];
+// CVE-2026-111497: Brotli decoder out-of-bounds write. First fixed release per line.
+const BROTLI_FIXED = { 22: [22, 23, 4], 24: [24, 22, 1], 26: [26, 12, 1] };
 
-async function decodedBytes(bytes, name) {
+function brotliPatched(version = process.versions.node) {
+  const parts = version.split('.').map(Number);
+  const fixed = BROTLI_FIXED[parts[0]];
+  if (!fixed) return parts[0] > 26;
+  for (let i = 1; i < 3; i++) if (parts[i] !== fixed[i]) return parts[i] > fixed[i];
+  return true;
+}
+
+async function decodedBytes(bytes, name, nodeVersion = process.versions.node) {
   if (bytes[0] === 0x00 && bytes.subarray(1, 4).toString('ascii') === 'asm')
     return { bytes, format: 'wasm', truncated: false };
   const gzip = bytes[0] === 0x1f && bytes[1] === 0x8b;
   if (!gzip && !/\.unityweb$|\.br$/i.test(name))
     return { bytes, format: 'uncompressed or unknown', truncated: false };
+  if (!gzip && !brotliPatched(nodeVersion))
+    return { bytes, format: 'brotli (disabled: unpatched runtime)', truncated: false };
   const decoder = gzip ? zlib.createGunzip() : zlib.createBrotliDecompress();
   const chunks = [];
   let size = 0;
@@ -37,8 +49,8 @@ async function decodedBytes(bytes, name) {
   return { bytes: Buffer.concat(chunks, size), format: gzip ? 'gzip' : 'brotli', truncated };
 }
 
-async function inspectAsset(bytes, name) {
-  const decoded = await decodedBytes(bytes, name);
+async function inspectAsset(bytes, name, nodeVersion) {
+  const decoded = await decodedBytes(bytes, name, nodeVersion);
   const content = decoded.bytes.toString('latin1');
   const lower = content.toLowerCase();
   const hits = [];
@@ -63,4 +75,4 @@ async function inspectAsset(bytes, name) {
   };
 }
 
-module.exports = { inspectAsset, decodedBytes };
+module.exports = { inspectAsset, decodedBytes, brotliPatched };
