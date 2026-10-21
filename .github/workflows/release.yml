@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: release-${{ github.ref }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      # The in-app updater compares the release tag with app.getVersion(), so a mismatch would offer the update forever.
+      - name: Check tag matches package.json version
+        shell: bash
+        run: |
+          expected="$(node -p "require('./package.json').version")"
+          if [ "$GITHUB_REF_NAME" != "$expected" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $expected"
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm test
+      - run: npm run dist -- --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - name: Publish GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          exe="dist/CristeDesktop-$GITHUB_REF_NAME.exe"
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$exe" --clobber
+          else
+            # Draft first so the updater never sees a published release without its exe.
+            gh release create "$GITHUB_REF_NAME" "$exe" --draft --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+            gh release edit "$GITHUB_REF_NAME" --draft=false --latest
+          fi
