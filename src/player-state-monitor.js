@@ -1,5 +1,5 @@
 const { randomUUID } = require('node:crypto');
-const { isGameUrl } = require('./player-api-diagnostic');
+const { isGameFrameUrl } = require('./player-api-diagnostic');
 const { playerStateFrameScript } = require('./player-state-frame');
 
 class PlayerStateMonitor {
@@ -24,7 +24,7 @@ class PlayerStateMonitor {
     if (this.active) this.timer = setInterval(() => this.scan().catch(() => {}), 1000);
   }
   async installFrame(frame) {
-    if (!this.active || !frame || !isGameUrl(frame.url)) return;
+    if (!this.active || !frame || !isGameFrameUrl(frame.url)) return;
     await frame.executeJavaScript(playerStateFrameScript(this.readerId, this.shareName, this.polling));
   }
   snapshot() {
@@ -57,7 +57,7 @@ class PlayerStateMonitor {
       const seen = new Set(), readable = new Set();
       for (const frame of this.getFrames()) {
         if (!this.active) break;
-        if (!isGameUrl(frame.url)) continue;
+        if (!isGameFrameUrl(frame.url)) continue;
         const key = frame.processId + ':' + frame.routingId;
         seen.add(key);
         this.frameRefs.set(key, frame);
@@ -106,7 +106,7 @@ class PlayerStateMonitor {
     this.active = false; clearInterval(this.timer); this.reset();
     await this.scanning?.catch(() => {});
     for (const frame of this.getFrames()) {
-      if (!isGameUrl(frame.url)) continue;
+      if (!isGameFrameUrl(frame.url)) continue;
       try { await frame.executeJavaScript(`(() => {
         const reader = window.__cristePresencePlayerReader;
         if (reader?.readerId === ${JSON.stringify(this.readerId)}) reader.stop();

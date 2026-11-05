@@ -5,7 +5,7 @@ function playerStateFrameScript(readerId, shareName = false, polling = false) {
   return `(() => {
     ${playerApiWireHelpersScript()}
     ${isPlayerRefreshRequest.toString()}
-    if (!isGameUrl(location.href)) return { installed: false };
+    if (!isGameFrameUrl(location.href)) return { installed: false };
     const key = '__cristePresencePlayerReader', readerId = ${JSON.stringify(readerId)};
     const shareName = ${shareName === true};
     const polling = ${polling === true}, interval = 60 * 1000;

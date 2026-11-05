@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
-const { PlayerApiDiagnostic, summarizePlayerJson, safeEndpoint, isGameUrl } = require('../src/player-api-diagnostic');
+const { PlayerApiDiagnostic, summarizePlayerJson, safeEndpoint, isGameUrl, isGameFrameUrl } = require('../src/player-api-diagnostic');
 
 test('player API summary keeps candidate numbers but omits names, IDs and secrets', () => {
   const summary = summarizePlayerJson(JSON.stringify({
@@ -30,6 +30,16 @@ test('API endpoint redaction excludes queries, names, IDs and opaque segments', 
   assert.equal(isGameUrl('https://games.mofushippo.com/game'), true);
   assert.equal(isGameUrl('https://games.mofushippo.com.evil.com/game'), false);
   assert.equal(isGameUrl('https://accounts.dmm.co.jp/login'), false);
+});
+
+test('game pages may run on CloudFront while game API requests stay on mofushippo', () => {
+  const cdn = 'https://d1yl2keu90rg3.cloudfront.net/r18/webgl/v1.0.5/index.html';
+  assert.equal(isGameFrameUrl(cdn), true);
+  assert.equal(isGameFrameUrl('https://games.mofushippo.com/CryWebAws/'), true);
+  assert.equal(isGameUrl(cdn), false);
+  for (const url of ['http://d1yl2keu90rg3.cloudfront.net/r18/', 'https://evil.cloudfront.net/r18/',
+    'https://d1yl2keu90rg3.cloudfront.net.evil.com/', 'https://play.games.dmm.co.jp/', 'about:blank', undefined])
+    assert.equal(isGameFrameUrl(url), false, String(url));
 });
 
 test('API summary bounds depth and size and handles binary or invalid JSON', () => {

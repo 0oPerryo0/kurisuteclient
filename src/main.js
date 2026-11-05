@@ -2,7 +2,7 @@ const { app, BrowserWindow, Menu, WebContentsView, ipcMain, dialog, session, web
 const fs = require('node:fs');
 const path = require('node:path');
 const { fpsScript } = require('./fps-script');
-const { gameClockScript, SPEED_OPTIONS, selectSpeed } = require('./game-clock');
+const { gameClockScript, isGameFrameUrl, SPEED_OPTIONS, selectSpeed } = require('./game-clock');
 const { gameOnlyScript } = require('./game-only-script');
 const { osapiLayoutScript } = require('./osapi-layout-script');
 const { guessScript, OBJECTS, METHODS } = require('./unity-guesses');
@@ -461,7 +461,7 @@ function updateMinimumSize() {
   );
 }
 function injectClock(frame) {
-  if (!frame?.url.startsWith('https://games.mofushippo.com/')) return;
+  if (!isGameFrameUrl(frame?.url)) return;
   frame.executeJavaScript(gameClockScript(settings.speed))
     .then(() => frame.executeJavaScript(`window.__cristeClock?.setSpeed(${settings.speed})`))
     .catch(() => {});
@@ -480,7 +480,7 @@ function applyFps() {
   const script = fpsScript(settings.fps);
   const visit = (frame) => {
     if (!frame) return;
-    if (frame.url.startsWith('https://games.mofushippo.com/'))
+    if (isGameFrameUrl(frame.url))
       frame.executeJavaScript(script).catch(() => {});
     for (const child of frame.frames) visit(child);
   };
@@ -489,14 +489,14 @@ function applyFps() {
 function applyFpsToFrame(processId, routingId) {
   if (!settings.fps) return;
   const frame = webFrameMain.fromId(processId, routingId);
-  if (frame?.url.startsWith('https://games.mofushippo.com/'))
+  if (isGameFrameUrl(frame?.url))
     frame.executeJavaScript(fpsScript(settings.fps)).catch(() => {});
 }
 function gameFrames(includePopups = false) {
   const found = [];
   function visit(frame) {
     if (!frame) return;
-    if (frame.url.startsWith('https://games.mofushippo.com/')) found.push(frame);
+    if (isGameFrameUrl(frame.url)) found.push(frame);
     for (const child of frame.frames) visit(child);
   }
   if (game && !game.webContents.isDestroyed()) visit(game.webContents.mainFrame);
@@ -913,7 +913,7 @@ async function saveTimingReport() {
   let frame;
   function find(current) {
     if (!current) return;
-    if (current.url.startsWith('https://games.mofushippo.com/')) frame = current;
+    if (isGameFrameUrl(current.url)) frame = current;
     for (const child of current.frames) find(child);
   }
   find(game.webContents.mainFrame);
@@ -941,7 +941,7 @@ function secureWebContents(contents) {
   });
   contents.on('did-start-navigation', (_event, url, inPlace, isMainFrame, processId, routingId) => {
     if (!inPlace && (isMainFrame || playerStateMonitor?.owner === processId + ':' + routingId ||
-        url.startsWith('https://games.mofushippo.com/'))) playerStateMonitor?.reset();
+        isGameFrameUrl(url))) playerStateMonitor?.reset();
   });
   contents.on('did-frame-finish-load', (_event, _main, processId, routingId) => {
     playerStateMonitor?.installFrame(webFrameMain.fromId(processId, routingId)).catch(() => {});
@@ -1001,7 +1001,7 @@ function createWindow() {
     injectClock(webFrameMain.fromId(processId, routingId));
     const frame = webFrameMain.fromId(processId, routingId);
     playerApiDiagnostic?.installFrame(frame).catch(() => {});
-    if (settings.bridgeEnabled && frame?.url.startsWith('https://games.mofushippo.com/')) {
+    if (settings.bridgeEnabled && isGameFrameUrl(frame?.url)) {
       setTimeout(() => { if (settings.bridgeEnabled) sendUnitySpeed(settings.speed).catch(() => {}); }, 5000);
     }
   });

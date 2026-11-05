@@ -1,5 +1,5 @@
 const { randomUUID } = require('node:crypto');
-const { isGameUrl } = require('./player-api-diagnostic');
+const { isGameFrameUrl } = require('./player-api-diagnostic');
 const { playerApiFrameScript } = require('./player-api-frame-script');
 
 class PlayerApiFrameDiagnostic {
@@ -23,7 +23,7 @@ class PlayerApiFrameDiagnostic {
     this.timer = setTimeout(() => this.finish('timeout'), 180000);
   }
   async installFrame(frame) {
-    if (!this.active || !frame || !isGameUrl(frame.url)) return;
+    if (!this.active || !frame || !isGameFrameUrl(frame.url)) return;
     const key = frame.processId + ':' + frame.routingId;
     try {
       const installation = frame.executeJavaScript(playerApiFrameScript(this.captureId));
@@ -62,7 +62,7 @@ class PlayerApiFrameDiagnostic {
     this.scanTask = (async () => {
       for (const frame of this.getFrames()) {
         if (!this.active) break;
-        if (!isGameUrl(frame.url)) continue;
+        if (!isGameFrameUrl(frame.url)) continue;
         await this.installFrame(frame);
         try { this.collect(await frame.executeJavaScript(this.reportScript())); }
         catch { this.counts.frameReadFailures++; }
@@ -82,7 +82,7 @@ class PlayerApiFrameDiagnostic {
       let frames = [];
       try { frames = this.getFrames(); } catch { this.counts.frameReadFailures++; }
       for (const frame of frames) {
-        if (!isGameUrl(frame.url)) continue;
+        if (!isGameFrameUrl(frame.url)) continue;
         try { this.collect(await frame.executeJavaScript(this.reportScript(true))); }
         catch { this.counts.frameReadFailures++; }
       }

@@ -1,5 +1,13 @@
 const SPEED_OPTIONS = [1, 2, 3, 5, 10];
 const SPEEDS = [...SPEED_OPTIONS, 99];
+// Origins whose pages run the Unity player. Since the November 2026 update the
+// launcher on games.mofushippo.com can load the R18 build from CloudFront.
+const GAME_FRAME_ORIGINS = ['https://games.mofushippo.com', 'https://d1yl2keu90rg3.cloudfront.net'];
+
+function isGameFrameUrl(value) {
+  try { return GAME_FRAME_ORIGINS.includes(new URL(value).origin); }
+  catch { return false; }
+}
 
 function selectSpeed(value, menuEvent) {
   if (!SPEED_OPTIONS.includes(value)) throw new Error('Invalid speed');
@@ -28,7 +36,7 @@ function createClock(nativeNow, initialSpeed = 1) {
 function gameClockScript(speed) {
   const initial = SPEEDS.includes(speed) ? speed : 1;
   return `(() => {
-    if (location.hostname !== 'games.mofushippo.com' || window.__cristeClock) return;
+    if (!${JSON.stringify(GAME_FRAME_ORIGINS)}.includes(location.origin) || window.__cristeClock) return;
     const native = performance.now.bind(performance);
     const state = { speed: ${initial}, realBase: native(), virtualBase: 0 };
     state.virtualBase = state.realBase;
@@ -48,4 +56,4 @@ function gameClockScript(speed) {
   })();`;
 }
 
-module.exports = { SPEED_OPTIONS, SPEEDS, selectSpeed, createClock, gameClockScript };
+module.exports = { SPEED_OPTIONS, SPEEDS, GAME_FRAME_ORIGINS, isGameFrameUrl, selectSpeed, createClock, gameClockScript };

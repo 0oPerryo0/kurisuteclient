@@ -8,7 +8,7 @@ const { activityForPlayer } = require('../src/discord-presence');
 const { scalar, message, initialPlayerRequest, initialPlayerReply } = require('./fixtures/player-protobuf.cjs');
 
 const flush = async () => { for (let i = 0; i < 8; i++) await new Promise(setImmediate); };
-function fixture(t, { polling = true, shareName = false } = {}) {
+function fixture(t, { polling = true, shareName = false, href = 'https://games.mofushippo.com/game/' } = {}) {
   let now = Date.now(), status = 200, body = initialPlayerReply(), responseHeaders = {}, handler;
   const calls = [];
   class ClockDate extends Date { static now() { return now; } }
@@ -36,7 +36,7 @@ function fixture(t, { polling = true, shareName = false } = {}) {
   const events = new EventTarget();
   const window = { fetch: nativeFetch, XMLHttpRequest: Xhr,
     addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events) };
-  const context = vm.createContext({ window, location: { href: 'https://games.mofushippo.com/game/' },
+  const context = vm.createContext({ window, location: { href },
     URL, Request, Headers, AbortController, TextEncoder, TextDecoder, Uint8Array, Blob, DecompressionStream,
     atob, setTimeout, clearTimeout, Date: ClockDate });
   vm.runInContext(playerStateFrameScript('poll-test', shareName, polling), context);
@@ -166,6 +166,25 @@ test('monitor refreshes only the selected frame each minute and retains aged sam
   assert.equal(monitor.snapshot().staminaAgeMinutes, 11);
   monitor.reset(); await flush();
   assert.equal(g.watch().snapshot().refresh.armed, false);
+});
+
+test('monitor reads the player from a Unity page hosted on CloudFront', async (t) => {
+  const href = 'https://d1yl2keu90rg3.cloudfront.net/r18/webgl/v1.0.5/index.html';
+  const f = fixture(t, { href });
+  const frame = { url: href, processId: 1, routingId: 2,
+    executeJavaScript: source => Promise.resolve(vm.runInContext(source, f.context)) };
+  let latest;
+  const monitor = new PlayerStateMonitor(() => [frame], player => { latest = player; }, { polling: true, now: () => f.clock() });
+  t.after(() => monitor.stop());
+  await monitor.start(); await f.initialize(); await monitor.scan();
+  assert.equal(monitor.owner, '1:2');
+  assert.equal(latest.level, 42);
+  assert.equal(latest.stamina, 120);
+});
+
+test('frame script on a non-game page stays uninstalled', (t) => {
+  const f = fixture(t, { href: 'https://evil.cloudfront.net/r18/' });
+  assert.equal(f.watch(), undefined);
 });
 
 test('an unrecognized refresh retains level, nickname and stamina rather than clearing presence', async (t) => {

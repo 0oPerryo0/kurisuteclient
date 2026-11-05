@@ -3,7 +3,7 @@ const { playerApiWireHelpersScript } = require('./player-api-wire');
 function playerApiFrameScript(captureId) {
   return `(() => {
     ${playerApiWireHelpersScript()}
-    if (!isGameUrl(location.href)) return { installed: false };
+    if (!isGameFrameUrl(location.href)) return { installed: false };
     const key = '__cristePlayerApiCapture';
     const captureId = ${JSON.stringify(captureId)};
     if (window[key]?.captureId === captureId && window[key].observerVersion === 8 && window[key].active())
