@@ -1,3 +1,36 @@
+# Dependencies
 node_modules/
+
+# Build output (electron-builder)
 dist/
+out/
+
+# Diagnostic reports saved from the client menu (may describe a player's session)
+/criste-*.json
+
+# Logs
 *.log
+npm-debug.log*
+
+# Local environment and secrets
+.env
+.env.*
+*.pem
+*.p12
+*.cer
+*.mobileprovision
+
+# Test and coverage output
+coverage/
+.nyc_output/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
