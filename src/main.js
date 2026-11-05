@@ -25,6 +25,8 @@ const { isDmmGamePage, withRegionCookie, isDmmRegionCookie, syncRegionCookie, re
 const { LANGUAGES, ORIGINAL_LANGUAGE, PATCH_SCHEME, bundleKind, patchesBundle, siblingBundleUrl, patchUrl, originalUrl,
   patchSceneBundle, patchTableBundle, traditionalConverter, pickCoverage } = require('./game-language');
 const { readBundle, fontCoverage } = require('./unity-bundle');
+const { OSS_HOST, R18_RESOURCES, MAX_MANIFEST, bundleSource, manifestBundles, BundleCatalog, versionUrl, manifestUrl } =
+  require('./yoo-manifest');
 const { checkLatest, downloadAsset } = require('./update-check');
 
 // The game fetches the bundles a chosen language rewrites through this scheme; Japanese is never redirected.
@@ -62,6 +64,10 @@ let status = 'Loading…';
 let ambientTimer;
 let ambientBusy = false;
 let assetCache;
+// R18 bundle files are named by hash; the package manifest says which bundle each one is.
+const bundleCatalog = new BundleCatalog();
+let catalogLoad = null;
+let catalogLoadedAt = 0;
 let assetDownloadController;
 let assetDownloadTask;
 let playerApiDiagnostic;
@@ -1037,7 +1043,8 @@ function taiwanText() {
 }
 async function fontsBeside(tableUrl) {
   // Converted text must stay drawable by the game's own fonts, which WebGL cannot fall back from.
-  const url = siblingBundleUrl(tableUrl, 'font');
+  const url = siblingBundleUrl(tableUrl, 'font', bundleCatalog);
+  if (!url) return [];
   try {
     const response = await assetCache.fetch(url);
     if (!response.ok) return [];
@@ -1050,22 +1057,45 @@ ${response.headers.get('etag') || response.headers.get('last-modified') || ''}`;
     return gameFonts.fonts;
   } catch { return []; }
 }
+// Learns hash-named bundle files from the package manifest beside them. A hash missing after a load
+// means the game updated, so it reloads, at most every 30 seconds. Failures leave files unpatched.
+async function loadBundleCatalog(base) {
+  const current = await assetCache.fetch(new Request(versionUrl(base), { cache: 'no-store' }));
+  if (!current.ok) throw new Error('Package version unavailable');
+  const version = (await current.text()).trim();
+  const response = await assetCache.fetch(new Request(manifestUrl(base, version), { cache: 'no-store' }));
+  if (!response.ok) throw new Error('Package manifest unavailable');
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.length > MAX_MANIFEST) throw new Error('Package manifest too large');
+  bundleCatalog.add(manifestBundles(bytes));
+}
+function knowBundle(url) {
+  const source = bundleSource(url);
+  if (source?.fileNames !== 'hash' || bundleCatalog.nameOf(source.hash)) return Promise.resolve();
+  if (!catalogLoad && Date.now() - catalogLoadedAt > 30000) {
+    catalogLoad = loadBundleCatalog(source.base).catch(() => {})
+      .finally(() => { catalogLoadedAt = Date.now(); catalogLoad = null; });
+  }
+  return catalogLoad || Promise.resolve();
+}
+// Both bundle servers answer with a wildcard; matching it serves the mofushippo and CloudFront game pages alike.
+const BUNDLE_CORS = { 'access-control-allow-origin': '*' };
 async function serveBundle(request) {
-  const url = originalUrl(request.url);
+  const url = originalUrl(request.url, bundleCatalog);
   if (!url) return new Response('Not found', { status: 404 });
   // No validators: Unity's cached original then fails revalidation and fetches this response.
-  if (request.method === 'HEAD') return new Response(null, { headers: { 'access-control-allow-origin': 'https://games.mofushippo.com' } });
+  if (request.method === 'HEAD') return new Response(null, { headers: BUNDLE_CORS });
   // Not redirected by the page, so this reuses the asset cache and the session's own fetch.
   const response = await assetCache.fetch(url);
   if (!response.ok) return response;
   const original = Buffer.from(await response.arrayBuffer());
-  const headers = { 'access-control-allow-origin': 'https://games.mofushippo.com', 'cache-control': 'no-store',
+  const headers = { ...BUNDLE_CORS, 'cache-control': 'no-store',
     'content-type': response.headers.get('content-type') || 'application/octet-stream' };
   const language = settings.gameLanguage;
-  if (!patchesBundle(language, url)) return new Response(original, { headers });
+  if (!patchesBundle(language, url, bundleCatalog)) return new Response(original, { headers });
   try {
     let patched;
-    if (bundleKind(url) === 'scene') patched = patchSceneBundle(original, language).bytes;
+    if (bundleKind(url, bundleCatalog) === 'scene') patched = patchSceneBundle(original, language).bytes;
     else {
       const fonts = await fontsBeside(url);
       patched = patchTableBundle(original, (sample) => traditionalConverter(taiwanText(), pickCoverage(fonts, sample))).bytes;
@@ -1073,7 +1103,7 @@ async function serveBundle(request) {
     return new Response(patched, { headers: { ...headers, 'content-length': String(patched.length) } });
   } catch (error) {
     // An unrecognized build loads unmodified instead of failing.
-    status = `Language patch unavailable for ${bundleKind(url)} data: ${error.message}`; publish();
+    status = `Language patch unavailable for ${bundleKind(url, bundleCatalog)} data: ${error.message}`; publish();
     return new Response(original, { headers });
   }
 }
@@ -1106,12 +1136,15 @@ app.whenReady().then(() => {
     status = `Language patch failed: ${error.message}`; publish();
     return new Response('Game bundle unavailable', { status: 502 });
   }));
-  gameSession.webRequest.onBeforeRequest({ urls: ['https://crystal-test1.oss-cn-beijing.aliyuncs.com/*'] }, (details, callback) => {
+  gameSession.webRequest.onBeforeRequest({ urls: [`https://${OSS_HOST}/*`, `${R18_RESOURCES}*`] }, (details, callback) => {
     // Only page requests are redirected; the app's own session fetches always reach the server.
     // Unity revalidates cross-origin cache entries with HEAD, so both methods must reach the patch scheme.
-    if (['GET', 'HEAD'].includes(details.method) && details.webContentsId && patchesBundle(settings.gameLanguage, details.url))
-      callback({ redirectURL: patchUrl(details.url) });
-    else callback({});
+    if (!['GET', 'HEAD'].includes(details.method) || !details.webContentsId || settings.gameLanguage === ORIGINAL_LANGUAGE) {
+      callback({});
+      return;
+    }
+    knowBundle(details.url).then(() => callback(patchesBundle(settings.gameLanguage, details.url, bundleCatalog)
+      ? { redirectURL: patchUrl(details.url) } : {}), () => callback({}));
   });
   ipcMain.handle('client:command', async (event, command, value) => {
     if (event.sender !== window.webContents && event.sender !== bridgeWindow?.webContents)

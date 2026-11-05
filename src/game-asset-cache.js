@@ -1,13 +1,15 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { R18_RESOURCES, manifestBundles } = require('./yoo-manifest');
 const { Readable } = require('node:stream');
 const { pipeline } = require('node:stream/promises');
 
 const MAX_FILE = 256 * 1024 * 1024;
 const MAX_CACHE = 2 * 1024 * 1024 * 1024;
-// The game page and engine come from mofushippo; YooAsset bundles come from the game's OSS bucket.
-const GAME_ASSET_HOSTS = ['games.mofushippo.com', 'crystal-test1.oss-cn-beijing.aliyuncs.com'];
+// The game page and engine come from mofushippo or, for R18, the CloudFront CDN; YooAsset
+// bundles come from the game's OSS bucket or the same CDN.
+const GAME_ASSET_HOSTS = ['games.mofushippo.com', 'crystal-test1.oss-cn-beijing.aliyuncs.com', 'd1yl2keu90rg3.cloudfront.net'];
 
 function isGameAsset(url) {
   try {
@@ -153,6 +155,10 @@ class GameAssetCache {
 
 function manifestAssets(bytes, manifestUrl) {
   if (bytes.length > 16 * 1024 * 1024 || !isGameAsset(manifestUrl)) return [];
+  const base = manifestUrl.slice(0, manifestUrl.split('?')[0].lastIndexOf('/') + 1);
+  // The R18 CDN stores bundles under their file hash, which only the manifest records.
+  if (base === R18_RESOURCES)
+    return [...new Set([...manifestBundles(bytes).values()].map((hash) => base + hash + '.bundle'))].slice(0, 5000);
   // YooAsset binary manifests commonly include printable bundle filenames.
   // Only extract static-file paths, never execute manifest content or guess numeric URLs.
   const text = Buffer.from(bytes).toString('latin1');

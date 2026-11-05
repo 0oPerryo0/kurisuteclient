@@ -243,3 +243,31 @@ test('redirects the scene bundle for any patched language and the table bundle o
   assert.equal(originalUrl(patchUrl(BASE + 'defaultpackage_assets_localresources_font.bundle')), null);
   assert.equal(originalUrl(patchUrl('https://example.com/defaultpackage_assets_localresources_scene.bundle')), null);
 });
+
+test('R18 CDN bundles are recognized by manifest hash, including the font beside the table', () => {
+  const { BundleCatalog, R18_RESOURCES } = require('../src/yoo-manifest');
+  const hashes = { scene: 'd0f11fb73f0ccda131b34e74d725b74b', table: '337fbbad8f3d334a26751cb7af58f5ea',
+    font: '6ffb33238a4ee4fa5e85fff93468dd67', other: '0123456789abcdef0123456789abcdef' };
+  const catalog = new BundleCatalog();
+  catalog.add(new Map([
+    ['defaultpackage_assets_localresources_scene.bundle', hashes.scene],
+    ['defaultpackage_assets_localresources_table.bundle', hashes.table],
+    ['defaultpackage_assets_localresources_font.bundle', hashes.font],
+    ['defaultpackage_assets_localresources_uiprefab.bundle', hashes.other]]));
+  const url = (hash) => R18_RESOURCES + hash + '.bundle';
+  assert.equal(bundleKind(url(hashes.scene), catalog), 'scene');
+  assert.equal(bundleKind(url(hashes.table), catalog), 'table');
+  assert.equal(bundleKind(url(hashes.other), catalog), null);
+  // Without the manifest the hash means nothing, so nothing is patched.
+  assert.equal(bundleKind(url(hashes.scene)), null);
+  assert.equal(patchesBundle('zh', url(hashes.scene), catalog), true);
+  assert.equal(patchesBundle('ja', url(hashes.scene), catalog), false);
+  assert.equal(patchesBundle('tw', url(hashes.table), catalog), true);
+  assert.equal(patchesBundle('zh', url(hashes.table), catalog), false);
+  assert.equal(patchesBundle('tw', url(hashes.font), catalog), false);
+  assert.equal(siblingBundleUrl(url(hashes.table) + '?t=1', 'font', catalog), url(hashes.font));
+  assert.equal(siblingBundleUrl(url(hashes.table), 'font', new BundleCatalog()), null);
+  assert.equal(originalUrl(patchUrl(url(hashes.scene)), catalog), url(hashes.scene));
+  assert.equal(originalUrl(patchUrl(url(hashes.font)), catalog), null);
+  assert.equal(originalUrl(patchUrl(url(hashes.scene))), null);
+});

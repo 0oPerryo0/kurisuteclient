@@ -87,3 +87,15 @@ test('manifest discovery resolves bundles next to a manifest on the asset bucket
     base + 'DefaultPackage_2026-09-30-830.bytes');
   assert.deepEqual(list, [base + 'defaultpackage_assets_localresources_scene.bundle']);
 });
+
+test('R18 CDN files are game assets and its manifest lists bundles by file hash', () => {
+  const base = 'https://d1yl2keu90rg3.cloudfront.net/r18/resources/';
+  assert.equal(isGameAsset(base + '337fbbad8f3d334a26751cb7af58f5ea.bundle'), true);
+  assert.equal(isGameAsset('https://d1yl2keu90rg3.cloudfront.net/r18/webgl/v1.0.5/Build/WebGeneralCryAws.wasm.unityweb'), true);
+  assert.equal(isGameAsset('https://evil.cloudfront.net/r18/resources/a.bundle'), false);
+  const name = 'defaultpackage_assets_localresources_table.bundle', hash = '337fbbad8f3d334a26751cb7af58f5ea';
+  const nameLength = Buffer.alloc(2); nameLength.writeUInt16LE(name.length);
+  const hashLength = Buffer.alloc(2); hashLength.writeUInt16LE(hash.length);
+  const manifest = Buffer.concat([nameLength, Buffer.from(name), Buffer.alloc(4), hashLength, Buffer.from(hash)]);
+  assert.deepEqual(manifestAssets(manifest, base + 'DefaultPackage_2026-11-05-1132.bytes'), [base + hash + '.bundle']);
+});
