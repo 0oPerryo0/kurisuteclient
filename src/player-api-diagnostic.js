@@ -1,4 +1,5 @@
 // Observe existing game responses through CDP. Never intercept or replay requests.
+const { GAME_FRAME_ORIGINS } = require('./game-clock');
 const MAX_BODY = 512 * 1024;
 const MAX_RESPONSES = 100;
 const SECRET_KEY = /token|auth|cookie|session|password|secret|(?:user|account|player|platform)[_-]?id|email|address|phone|payment|receipt/i;
@@ -9,8 +10,15 @@ function isGameUrl(value) {
   catch { return false; }
 }
 
+// The Unity page may run on a CDN origin; game API requests still go to games.mofushippo.com.
+function isGameFrameUrl(value) {
+  if (isGameUrl(value)) return true;
+  try { return GAME_FRAME_ORIGINS.includes(new URL(value).origin); }
+  catch { return false; }
+}
+
 function isGameScriptUrl(value) {
-  return isGameUrl(value) || (typeof value === 'string' && value.startsWith('blob:') && isGameUrl(value.slice(5)));
+  return isGameFrameUrl(value) || (typeof value === 'string' && value.startsWith('blob:') && isGameFrameUrl(value.slice(5)));
 }
 
 function safeEndpoint(value) {
@@ -77,7 +85,8 @@ function summarizePlayerData(data) {
 
 function playerApiHelpersScript() {
   return `const MAX_BODY = ${MAX_BODY}; const SECRET_KEY = ${SECRET_KEY}; const ROUTE_PARTS = ${ROUTE_PARTS};
-    ${isGameUrl.toString()} ${safeEndpoint.toString()} ${summarizePlayerData.toString()} ${summarizePlayerJson.toString()}`;
+    const GAME_FRAME_ORIGINS = ${JSON.stringify(GAME_FRAME_ORIGINS)};
+    ${isGameUrl.toString()} ${isGameFrameUrl.toString()} ${safeEndpoint.toString()} ${summarizePlayerData.toString()} ${summarizePlayerJson.toString()}`;
 }
 
 class PlayerApiDiagnostic {
@@ -126,7 +135,7 @@ class PlayerApiDiagnostic {
   }
   key(id, sessionId = '') { return sessionId + ':' + id; }
   rememberFrame(frame, sessionId) {
-    const game = isGameUrl(frame.url);
+    const game = isGameFrameUrl(frame.url);
     this.frames.set(this.key(frame.id, sessionId), { game });
     const snapshot = { endpoint: safeEndpoint(frame.url), game };
     const key = JSON.stringify(snapshot);
@@ -176,7 +185,7 @@ class PlayerApiDiagnostic {
     } else if (method === 'Network.requestWillBeSent') {
       this.counts.requestsSeen++;
       const scoped = this.gameFrame(params.frameId, sessionId) || this.gameInitiator(params.initiator) ||
-        isGameUrl(params.documentURL);
+        isGameFrameUrl(params.documentURL);
       if (scoped) this.counts.gameRequests++;
       if (this.requests.size < 2000 || this.requests.has(requestKey)) this.requests.set(requestKey, scoped);
       // No request URL, post body, headers or credentials are retained.
@@ -281,4 +290,4 @@ class PlayerApiDiagnostic {
   }
 }
 
-module.exports = { PlayerApiDiagnostic, summarizePlayerJson, summarizePlayerData, playerApiHelpersScript, safeEndpoint, isGameUrl };
+module.exports = { PlayerApiDiagnostic, summarizePlayerJson, summarizePlayerData, playerApiHelpersScript, safeEndpoint, isGameUrl, isGameFrameUrl };

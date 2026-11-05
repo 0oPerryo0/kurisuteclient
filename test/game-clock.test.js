@@ -1,7 +1,25 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
-const { SPEED_OPTIONS, selectSpeed, createClock, gameClockScript } = require('../src/game-clock');
+const { SPEED_OPTIONS, selectSpeed, createClock, gameClockScript, isGameFrameUrl } = require('../src/game-clock');
+
+test('game frames include the CloudFront Unity build and reject lookalikes', () => {
+  for (const url of ['https://games.mofushippo.com/CryWebAws/',
+    'https://d1yl2keu90rg3.cloudfront.net/r18/webgl/v1.0.5/index.html']) assert.equal(isGameFrameUrl(url), true, url);
+  for (const url of ['http://d1yl2keu90rg3.cloudfront.net/r18/', 'https://evil.cloudfront.net/r18/',
+    'https://d1yl2keu90rg3.cloudfront.net.evil.com/', 'https://games.mofushippo.com.evil.com/',
+    'https://play.games.dmm.co.jp/', 'about:blank', '', undefined]) assert.equal(isGameFrameUrl(url), false, String(url));
+});
+
+test('injected clock installs on the CloudFront game frame and skips other origins', () => {
+  class Performance { now() { return 1000; } }
+  for (const [origin, installed] of [['https://d1yl2keu90rg3.cloudfront.net', true],
+    ['https://games.mofushippo.com', true], ['https://play.games.dmm.co.jp', false]]) {
+    const window = {};
+    vm.runInNewContext(gameClockScript(2), { window, location: { origin }, performance: new Performance(), Performance });
+    assert.equal(Boolean(window.__cristeClock), installed, origin);
+  }
+});
 
 test('2× clock doubles elapsed time and does not jump when changed', () => {
   let real = 1000;
@@ -51,7 +69,7 @@ test('injected game clock accepts 99× initially and when switched at runtime', 
   let real = 1000;
   class Performance { now() { return real; } }
   const window = {};
-  const context = { window, location: { hostname: 'games.mofushippo.com' },
+  const context = { window, location: { origin: 'https://games.mofushippo.com' },
     performance: new Performance(), Performance };
   vm.runInNewContext(gameClockScript(99), context);
   assert.equal(window.__cristeClock.speed(), 99);

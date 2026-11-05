@@ -36,7 +36,7 @@ app.whenReady().then(async () => {
     // Test-only adapter allows local HTTP instead of the production HTTPS game origin.
     const frame = { processId: game.processId, routingId: game.routingId, url: 'https://games.mofushippo.com/game',
       executeJavaScript(source) {
-        source = source.replace("if (!isGameUrl(location.href)) return { installed: false };",
+        source = source.replace("if (!isGameFrameUrl(location.href)) return { installed: false };",
           `if (location.href !== ${JSON.stringify(origin + '/game')}) return { installed: false };`)
           .replace("['https:', 'wss:']", "['https:', 'wss:', 'http:']");
         source = source.replace("return url.protocol === 'https:' && url.hostname === 'games.mofushippo.com';",

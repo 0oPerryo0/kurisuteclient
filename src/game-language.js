@@ -1,4 +1,5 @@
 const { readBundle, writeBundle, readTextAssets, replaceTextAssets } = require('./unity-bundle');
+const { bundleSource } = require('./yoo-manifest');
 
 // value is GameConfig.LANGUAGE_TYPE in the game's HotUpdate.dll: 简体中文, 英语, 日语, 繁体中文.
 // The game reads it once at startup; 繁体中文 shows the same Chinese column as 简体中文.
@@ -9,7 +10,6 @@ const LANGUAGES = {
 };
 const ORIGINAL_LANGUAGE = 'ja';
 const PATCH_SCHEME = 'criste-game';
-const BUNDLE_HOST = 'crystal-test1.oss-cn-beijing.aliyuncs.com';
 const BUNDLES = {
   // The live GameConfig is in the YooAsset scene bundle; base-build scene copies are unused.
   scene: 'defaultpackage_assets_localresources_scene.bundle',
@@ -19,38 +19,39 @@ const BUNDLES = {
 const SCENE_FILE = /^(?:level\d+|BuildPlayer-[^./]+)$/;
 const MAX_CELL = 32767;
 
-function bundleKind(url) {
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== 'https:' || parsed.hostname !== BUNDLE_HOST || parsed.username || parsed.password) return null;
-    const name = parsed.pathname.slice(parsed.pathname.lastIndexOf('/') + 1);
-    return Object.keys(BUNDLES).find((kind) => BUNDLES[kind] === name) || null;
-  } catch { return null; }
+// catalog maps file hashes to bundle names for sources that name files by hash (BundleCatalog).
+function bundleKind(url, catalog = null) {
+  const source = bundleSource(url);
+  if (!source) return null;
+  const name = source.fileNames === 'hash' ? catalog?.nameOf(source.hash) : source.file;
+  return Object.keys(BUNDLES).find((kind) => BUNDLES[kind] === name) || null;
 }
 
 // Bundles the client rewrites for a language; Japanese loads everything unmodified.
-function patchesBundle(language, url) {
-  const kind = bundleKind(url), choice = LANGUAGES[language];
+function patchesBundle(language, url, catalog = null) {
+  const kind = bundleKind(url, catalog), choice = LANGUAGES[language];
   if (!choice || language === ORIGINAL_LANGUAGE) return false;
   return kind === 'scene' || (kind === 'table' && !!choice.traditional);
 }
 
-function siblingBundleUrl(url, kind) {
-  const parsed = new URL(url);
-  parsed.pathname = parsed.pathname.slice(0, parsed.pathname.lastIndexOf('/') + 1) + BUNDLES[kind];
-  parsed.search = '';
-  return parsed.href;
+// Another bundle from the same source, or null when a hashed source has no known file for it.
+function siblingBundleUrl(url, kind, catalog = null) {
+  const source = bundleSource(url);
+  if (!source) return null;
+  if (source.fileNames !== 'hash') return source.base + BUNDLES[kind];
+  const hash = catalog?.hashOf(BUNDLES[kind]);
+  return hash ? source.base + hash + '.bundle' : null;
 }
 
 function patchUrl(url) {
   return `${PATCH_SCHEME}://bundle/?u=${encodeURIComponent(url)}`;
 }
 
-function originalUrl(url) {
+function originalUrl(url, catalog = null) {
   try {
     const parsed = new URL(url);
     const target = parsed.protocol === PATCH_SCHEME + ':' && parsed.hostname === 'bundle' ? parsed.searchParams.get('u') : null;
-    return target && ['scene', 'table'].includes(bundleKind(target)) ? target : null;
+    return target && ['scene', 'table'].includes(bundleKind(target, catalog)) ? target : null;
   } catch { return null; }
 }
 
