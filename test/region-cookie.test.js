@@ -91,3 +91,11 @@ test('recognises only our override values as already applied', () => {
   assert.equal(isRegionValue({ name: 'ckcy_remedied_check', value: 'ec_mrnhbtk' }), true);
   assert.equal(isRegionValue({ name: 'constructor', value: undefined }), false);
 });
+
+test('replaces a Simplified Chinese first language that DMM sends to the region gate', () => {
+  const { gameAcceptLanguages } = require('../src/region-cookie');
+  for (const locale of ['zh-CN', 'zh', 'zh-SG', 'zh-Hans', 'zh-Hans-CN', 'ZH-cn'])
+    assert.equal(gameAcceptLanguages(locale), 'ja-JP,ja,en-US,en', locale);
+  for (const locale of ['zh-TW', 'zh-HK', 'zh-Hant', 'zh-Hant-TW', 'ja', 'en-US', '', undefined])
+    assert.equal(gameAcceptLanguages(locale), null, String(locale));
+});

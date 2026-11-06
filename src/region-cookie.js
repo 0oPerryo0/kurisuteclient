@@ -66,4 +66,10 @@ async function removeRegionCookie(cookies) {
   }
 }
 
-module.exports = { isDmmGamePage, withRegionCookie, isDmmRegionCookie, isRegionValue, syncRegionCookie, removeRegionCookie };
+// accounts.dmm.co.jp redirects to the region gate when the first Accept-Language
+// is Simplified Chinese (zh, zh-CN, zh-SG, zh-Hans), whatever the cookies say.
+function gameAcceptLanguages(locale) {
+  return /^zh(?:-(?:cn|sg|hans)(?:-.*)?)?$/i.test(locale || '') ? 'ja-JP,ja,en-US,en' : null;
+}
+
+module.exports = { isDmmGamePage, withRegionCookie, isDmmRegionCookie, isRegionValue, syncRegionCookie, removeRegionCookie, gameAcceptLanguages };
