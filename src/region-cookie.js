@@ -15,18 +15,23 @@ function isDmmGamePage(url) {
   } catch { return false; }
 }
 
+// DMM sets ckcy=2 on dmm.co.jp for visitors outside Japan; mainland China users
+// still hit the region gate with only ckcy_remedied_check overridden.
+const REGION_COOKIES = new Map([['ckcy_remedied_check', 'ec_mrnhbtk'], ['ckcy', '1']]);
+
 function withRegionCookie(cookieHeader = '') {
   const others = String(cookieHeader).split(';').map((part) => part.trim())
-    .filter((part) => part && !/^ckcy_remedied_check\s*=/i.test(part));
-  return ['ckcy_remedied_check=ec_mrnhbtk', ...others].join('; ');
+    .filter((part) => part && !REGION_COOKIES.has(part.split('=')[0].trim().toLowerCase()));
+  return [...REGION_COOKIES].map(([name, value]) => `${name}=${value}`).concat(others).join('; ');
 }
 
-const COOKIE_NAME = 'ckcy_remedied_check';
-const COOKIE_VALUE = 'ec_mrnhbtk';
+function isRegionValue(cookie) {
+  return REGION_COOKIES.has(cookie.name) && REGION_COOKIES.get(cookie.name) === cookie.value;
+}
 
 function isDmmRegionCookie(cookie) {
   const domain = cookie.domain?.replace(/^\./, '').toLowerCase();
-  return cookie.name === COOKIE_NAME &&
+  return REGION_COOKIES.has(cookie.name) &&
     (domain === 'dmm.co.jp' || domain?.endsWith('.dmm.co.jp'));
 }
 
@@ -35,25 +40,36 @@ function cookieUrl(cookie) {
 }
 
 async function syncRegionCookie(cookies) {
-  const existing = (await cookies.get({ name: COOKIE_NAME })).filter(isDmmRegionCookie);
-  if (!existing.some((cookie) => cookie.domain.replace(/^\./, '').toLowerCase() === 'dmm.co.jp' && cookie.path === '/')) {
-    await cookies.set({ url: 'https://www.dmm.co.jp/', domain: '.dmm.co.jp', path: '/',
-      name: COOKIE_NAME, value: COOKIE_VALUE, secure: true });
-  }
-  for (const cookie of existing) {
-    if (cookie.value === COOKIE_VALUE) continue;
-    await cookies.set({ url: cookieUrl(cookie), domain: cookie.domain, path: cookie.path,
-      name: COOKIE_NAME, value: COOKIE_VALUE, secure: cookie.secure,
-      httpOnly: cookie.httpOnly, sameSite: cookie.sameSite,
-      ...(cookie.session ? {} : { expirationDate: cookie.expirationDate }) });
+  for (const [name, value] of REGION_COOKIES) {
+    const existing = (await cookies.get({ name })).filter(
+      (cookie) => cookie.name === name && isDmmRegionCookie(cookie));
+    if (!existing.some((cookie) => cookie.domain.replace(/^\./, '').toLowerCase() === 'dmm.co.jp' && cookie.path === '/')) {
+      await cookies.set({ url: 'https://www.dmm.co.jp/', domain: '.dmm.co.jp', path: '/',
+        name, value, secure: true });
+    }
+    for (const cookie of existing) {
+      if (cookie.value === value) continue;
+      await cookies.set({ url: cookieUrl(cookie), domain: cookie.domain, path: cookie.path,
+        name, value, secure: cookie.secure,
+        httpOnly: cookie.httpOnly, sameSite: cookie.sameSite,
+        ...(cookie.session ? {} : { expirationDate: cookie.expirationDate }) });
+    }
   }
 }
 
 async function removeRegionCookie(cookies) {
-  const existing = (await cookies.get({ name: COOKIE_NAME })).filter(
-    (cookie) => isDmmRegionCookie(cookie) && cookie.value === COOKIE_VALUE,
-  );
-  for (const cookie of existing) await cookies.remove(cookieUrl(cookie), COOKIE_NAME);
+  for (const name of REGION_COOKIES.keys()) {
+    const existing = (await cookies.get({ name })).filter(
+      (cookie) => cookie.name === name && isDmmRegionCookie(cookie) && isRegionValue(cookie),
+    );
+    for (const cookie of existing) await cookies.remove(cookieUrl(cookie), name);
+  }
 }
 
-module.exports = { isDmmGamePage, withRegionCookie, isDmmRegionCookie, syncRegionCookie, removeRegionCookie };
+// accounts.dmm.co.jp redirects to the region gate when the first Accept-Language
+// is Simplified Chinese (zh, zh-CN, zh-SG, zh-Hans), whatever the cookies say.
+function gameAcceptLanguages(locale) {
+  return /^zh(?:-(?:cn|sg|hans)(?:-.*)?)?$/i.test(locale || '') ? 'ja-JP,ja,en-US,en' : null;
+}
+
+module.exports = { isDmmGamePage, withRegionCookie, isDmmRegionCookie, isRegionValue, syncRegionCookie, removeRegionCookie, gameAcceptLanguages };

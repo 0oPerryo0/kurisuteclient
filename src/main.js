@@ -21,7 +21,7 @@ const { DEFAULT_WINDOW_TITLE, UPDATE_NOTICE, attachPlayerWindowTitle } = require
 const { unityPointerProbeScript } = require('./unity-pointer-probe');
 const { inspectAsset, decodedBytes } = require('./asset-analysis');
 const { extractMetadata, parseMetadata } = require('./il2cpp-metadata');
-const { isDmmGamePage, withRegionCookie, isDmmRegionCookie, syncRegionCookie, removeRegionCookie } = require('./region-cookie');
+const { isDmmGamePage, withRegionCookie, isDmmRegionCookie, isRegionValue, syncRegionCookie, removeRegionCookie, gameAcceptLanguages } = require('./region-cookie');
 const { LANGUAGES, ORIGINAL_LANGUAGE, PATCH_SCHEME, bundleKind, patchesBundle, siblingBundleUrl, patchUrl, originalUrl,
   patchSceneBundle, patchTableBundle, traditionalConverter, pickCoverage } = require('./game-language');
 const { readBundle, fontCoverage } = require('./unity-bundle');
@@ -1113,10 +1113,12 @@ app.whenReady().then(() => {
   // Keep the DMM login session in this app, not in the user's regular browser.
   const gameSession = session.fromPartition('persist:criste');
   gameSession.setSpellCheckerEnabled(false);
+  const acceptLanguages = gameAcceptLanguages(app.getLocale());
+  if (acceptLanguages) gameSession.setUserAgent(gameSession.getUserAgent(), acceptLanguages);
   assetCache = createGameAssetCache(gameSession, path.join(app.getPath('userData'), 'game-assets'));
   gameSession.cookies.on('changed', (_event, cookie, cause, removed) => {
     if (!settings.regionCookie || removed || !isDmmRegionCookie(cookie) ||
-        cookie.value === 'ec_mrnhbtk') return;
+        isRegionValue(cookie)) return;
     queueRegionCookieUpdate(() => settings.regionCookie
       ? syncRegionCookie(gameSession.cookies) : Promise.resolve());
   });
