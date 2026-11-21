@@ -4,7 +4,7 @@ const {
   LANGUAGES, bundleKind, patchesBundle, siblingBundleUrl, patchUrl, originalUrl, findGameConfigs, patchSceneBundle,
   readTable, writeTable, storyTextIds, traditionalConverter, pickCoverage, convertLanguageTable, patchTableBundle,
 } = require('../src/game-language');
-const { lz4Block, readBundle, readTextAssets, replaceTextAssets, fontCoverage } = require('../src/unity-bundle');
+const { lz4Block, readBundle, readTextAssets, readSerialized, replaceTextAssets, patchFontBundle, fontCoverage } = require('../src/unity-bundle');
 
 const BASE = 'https://crystal-test1.oss-cn-beijing.aliyuncs.com/resouce-dev-aws/';
 
@@ -65,15 +65,15 @@ function table(rows) {
 }
 
 // Format 22 serialized file holding TextAssets, as Unity writes them for table bundles.
-function serialized(assets) {
+function serialized(assets, classId = 49) {
   const pad = (n) => Buffer.alloc((4 - (n % 4)) % 4);
-  const bodies = assets.map(([name, script]) => {
+  const bodies = classId === 128 ? assets : assets.map(([name, script]) => {
     const nameBytes = Buffer.from(name, 'utf8');
     const head = Buffer.alloc(4); head.writeInt32LE(nameBytes.length, 0);
     const length = Buffer.alloc(4); length.writeInt32LE(script.length, 0);
     return Buffer.concat([head, nameBytes, pad(nameBytes.length), length, script, pad(script.length)]);
   });
-  const type = Buffer.alloc(7 + 16); type.writeInt32LE(49, 0); type.writeInt16LE(-1, 5);
+  const type = Buffer.alloc(7 + 16); type.writeInt32LE(classId, 0); type.writeInt16LE(-1, 5);
   const counts = Buffer.alloc(9); counts.writeInt32LE(20, 0); counts.writeInt32LE(1, 5);
   const objectCount = Buffer.alloc(4); objectCount.writeInt32LE(assets.length, 0);
   let meta = Buffer.concat([Buffer.from('2022.3.34f1c1\0', 'latin1'), counts, type, objectCount]);
@@ -240,7 +240,7 @@ test('redirects the scene bundle for any patched language and the table bundle o
     'https://games.mofushippo.com/CryWebAws/Build/CryWebAws.data.unityweb']) assert.equal(patchesBundle('tw', other), false, other);
   assert.equal(siblingBundleUrl(scene, 'font'), BASE + 'defaultpackage_assets_localresources_font.bundle');
   assert.equal(originalUrl(patchUrl(scene)), scene);
-  assert.equal(originalUrl(patchUrl(BASE + 'defaultpackage_assets_localresources_font.bundle')), null);
+  assert.equal(originalUrl(patchUrl(BASE + 'defaultpackage_assets_localresources_font.bundle')), BASE + 'defaultpackage_assets_localresources_font.bundle');
   assert.equal(originalUrl(patchUrl('https://example.com/defaultpackage_assets_localresources_scene.bundle')), null);
 });
 
@@ -265,9 +265,27 @@ test('R18 CDN bundles are recognized by manifest hash, including the font beside
   assert.equal(patchesBundle('tw', url(hashes.table), catalog), true);
   assert.equal(patchesBundle('zh', url(hashes.table), catalog), false);
   assert.equal(patchesBundle('tw', url(hashes.font), catalog), false);
+  assert.equal(patchesBundle('zh', url(hashes.font), catalog), true);
+  assert.equal(patchesBundle('ja', url(hashes.font), catalog), false);
   assert.equal(siblingBundleUrl(url(hashes.table) + '?t=1', 'font', catalog), url(hashes.font));
   assert.equal(siblingBundleUrl(url(hashes.table), 'font', new BundleCatalog()), null);
   assert.equal(originalUrl(patchUrl(url(hashes.scene)), catalog), url(hashes.scene));
-  assert.equal(originalUrl(patchUrl(url(hashes.font)), catalog), null);
+  assert.equal(originalUrl(patchUrl(url(hashes.font)), catalog), url(hashes.font));
   assert.equal(originalUrl(patchUrl(url(hashes.scene))), null);
+});
+
+test('adds a local Chinese fallback reference while preserving the primary font and other objects', () => {
+  const number = (n) => { const b = Buffer.alloc(4); b.writeUInt32LE(n); return b; };
+  const string = (s) => Buffer.concat([number(s.length), Buffer.from(s), Buffer.alloc((4 - s.length % 4) % 4)]);
+  const flags = Buffer.from([0, 0, 0, 0, 0, 1]);
+  const font = (name, family) => Buffer.concat([string(name), number(1), string(family), number(0), flags]);
+  const primary = font('IBMPlexSansJP-Bold', 'IBM Plex Sans JP');
+  const chinese = font('STHeiti-Medium-4', '.HeitiUI TC');
+  const other = font('Digits', 'Digits');
+  const bundle = unityFs([{ name: 'CAB-' + 'a'.repeat(32), bytes: serialized([primary, chinese, other], 128) }], 24);
+  const output = readBundle(patchFontBundle(bundle)).nodes[0].bytes;
+  const parsed = readSerialized(output);
+  const bodies = parsed.objects.map((o) => output.subarray(parsed.dataOffset + o.start, parsed.dataOffset + o.start + o.size));
+  assert.deepEqual(bodies, [Buffer.concat([string('IBMPlexSansJP-Bold'), number(2), string('IBM Plex Sans JP'),
+    string('.HeitiUI TC'), number(1), number(0), number(2), number(0), flags]), chinese, other]);
 });

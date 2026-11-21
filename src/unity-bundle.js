@@ -164,12 +164,8 @@ function readTextAssets(file) {
 // Replaces TextAsset contents by name and moves the following objects to keep 8-byte alignment.
 function replaceTextAssets(file, replacements) {
   const { dataOffset, objects } = readSerialized(file);
-  const ordered = [...objects].sort((a, b) => a.start - b.start);
-  const bodies = [];
-  let end = 0, changed = 0;
-  for (const object of ordered) {
-    if (object.start !== align(end, 8)) throw new Error('Unexpected serialized object layout');
-    let body = file.subarray(dataOffset + object.start, dataOffset + object.start + object.size);
+  let changed = 0;
+  const bytes = rewriteObjects(file, dataOffset, objects, (object, body) => {
     if (object.classId === TEXT_ASSET) {
       const { name, head, script } = textAssetParts(file, dataOffset, object);
       if (head.length + 4 + align(script.length, 4) !== object.size) throw new Error(`Unexpected TextAsset ${name}`);
@@ -177,10 +173,22 @@ function replaceTextAssets(file, replacements) {
       if (replacement) {
         const length = Buffer.alloc(4);
         length.writeInt32LE(replacement.length, 0);
-        body = Buffer.concat([head, length, replacement, Buffer.alloc(align(replacement.length, 4) - replacement.length)]);
         changed++;
+        return Buffer.concat([head, length, replacement, Buffer.alloc(align(replacement.length, 4) - replacement.length)]);
       }
     }
+    return body;
+  });
+  return { bytes, changed };
+}
+
+function rewriteObjects(file, dataOffset, objects, replace) {
+  const ordered = [...objects].sort((a, b) => a.start - b.start);
+  const bodies = [];
+  let end = 0;
+  for (const object of ordered) {
+    if (object.start !== align(end, 8)) throw new Error('Unexpected serialized object layout');
+    const body = replace(object, file.subarray(dataOffset + object.start, dataOffset + object.start + object.size));
     bodies.push({ object, body });
     end = object.start + object.size;
   }
@@ -195,7 +203,52 @@ function replaceTextAssets(file, replacements) {
     position = start + body.length;
   }
   output[0].writeBigInt64BE(BigInt(dataOffset + position), 24);
-  return { bytes: Buffer.concat(output), changed };
+  return Buffer.concat(output);
+}
+
+// Unity 2022 Font ends with fontNames[], fallbackFonts[] (local PPtrs),
+// fontRenderingMode and two flags. Match the known single-family, empty-fallback
+// layout before editing it; leave newer or differently configured fonts alone.
+function fontFamilyField(family) {
+  const text = Buffer.from(family);
+  const field = Buffer.alloc(4 + align(text.length, 4));
+  field.writeInt32LE(text.length);
+  text.copy(field, 4);
+  return field;
+}
+
+function patchFontBundle(bytes) {
+  const bundle = readBundle(bytes);
+  let patched = 0;
+  for (const node of bundle.nodes.filter((node) => /^CAB-[0-9a-f]{32}$/i.test(node.name))) {
+    const file = node.bytes;
+    const { dataOffset, objects } = readSerialized(file);
+    const families = ['Gen Jyuu Gothic', 'IBM Plex Sans JP'].map(fontFamilyField);
+    const fallback = fontFamilyField('.HeitiUI TC');
+    const fonts = objects.filter((object) => object.classId === 128);
+    const target = fonts.find((object) => {
+      const start = dataOffset + object.start;
+      const body = file.subarray(start, start + object.size);
+      return body.toString('utf8', 4, 4 + body.readUInt32LE()) === 'STHeiti-Medium-4' &&
+        body.subarray(-10 - fallback.length, -10).equals(fallback);
+    });
+    if (!target) continue;
+    const reference = Buffer.alloc(16);
+    reference.writeInt32LE(1); // One fallback, file ID zero, path ID from this serialized file.
+    file.copy(reference, 8, target.entry, target.entry + 8);
+    node.bytes = rewriteObjects(file, dataOffset, objects, (object, body) => {
+      if (object.classId !== 128 || body.length < 14 || body.readUInt32LE(body.length - 10) !== 0) return body;
+      const family = families.find((field) => body.subarray(-10 - field.length, -10).equals(field));
+      if (!family) return body;
+      const count = body.length - 14 - family.length;
+      if (count < 0 || body.readUInt32LE(count) !== 1) return body;
+      const names = Buffer.from([2, 0, 0, 0]);
+      patched++;
+      return Buffer.concat([body.subarray(0, count), names, family, fallback, reference, body.subarray(-6)]);
+    });
+  }
+  if (!patched) throw new Error('Compatible Simplified Chinese font fallback layout not found');
+  return writeBundle(bundle);
 }
 
 // Character coverage of TrueType/OpenType fonts embedded anywhere in the given bytes.
@@ -235,4 +288,4 @@ function fontCoverage(bytes) {
   return fonts;
 }
 
-module.exports = { lz4Block, readBundle, writeBundle, readSerialized, readTextAssets, replaceTextAssets, fontCoverage };
+module.exports = { lz4Block, readBundle, writeBundle, readSerialized, readTextAssets, replaceTextAssets, patchFontBundle, fontCoverage };
