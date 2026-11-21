@@ -24,7 +24,7 @@ const { extractMetadata, parseMetadata } = require('./il2cpp-metadata');
 const { isDmmGamePage, withRegionCookie, isDmmRegionCookie, syncRegionCookie, removeRegionCookie } = require('./region-cookie');
 const { LANGUAGES, ORIGINAL_LANGUAGE, PATCH_SCHEME, bundleKind, patchesBundle, siblingBundleUrl, patchUrl, originalUrl,
   patchSceneBundle, patchTableBundle, traditionalConverter, pickCoverage } = require('./game-language');
-const { readBundle, fontCoverage } = require('./unity-bundle');
+const { readBundle, patchFontBundle, fontCoverage } = require('./unity-bundle');
 const { OSS_HOST, R18_RESOURCES, MAX_MANIFEST, bundleSource, manifestBundles, BundleCatalog, versionUrl, manifestUrl } =
   require('./yoo-manifest');
 const { checkLatest, downloadAsset } = require('./update-check');
@@ -1095,7 +1095,9 @@ async function serveBundle(request) {
   if (!patchesBundle(language, url, bundleCatalog)) return new Response(original, { headers });
   try {
     let patched;
-    if (bundleKind(url, bundleCatalog) === 'scene') patched = patchSceneBundle(original, language).bytes;
+    const kind = bundleKind(url, bundleCatalog);
+    if (kind === 'font') patched = patchFontBundle(original);
+    else if (kind === 'scene') patched = patchSceneBundle(original, language).bytes;
     else {
       const fonts = await fontsBeside(url);
       patched = patchTableBundle(original, (sample) => traditionalConverter(taiwanText(), pickCoverage(fonts, sample))).bytes;

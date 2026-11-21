@@ -31,7 +31,7 @@ function bundleKind(url, catalog = null) {
 function patchesBundle(language, url, catalog = null) {
   const kind = bundleKind(url, catalog), choice = LANGUAGES[language];
   if (!choice || language === ORIGINAL_LANGUAGE) return false;
-  return kind === 'scene' || (kind === 'table' && !!choice.traditional);
+  return kind === 'scene' || (kind === 'font' && language === 'zh') || (kind === 'table' && !!choice.traditional);
 }
 
 // Another bundle from the same source, or null when a hashed source has no known file for it.
@@ -51,7 +51,7 @@ function originalUrl(url, catalog = null) {
   try {
     const parsed = new URL(url);
     const target = parsed.protocol === PATCH_SCHEME + ':' && parsed.hostname === 'bundle' ? parsed.searchParams.get('u') : null;
-    return target && ['scene', 'table'].includes(bundleKind(target, catalog)) ? target : null;
+    return target && ['scene', 'table', 'font'].includes(bundleKind(target, catalog)) ? target : null;
   } catch { return null; }
 }
 
